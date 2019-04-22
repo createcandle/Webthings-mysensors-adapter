@@ -1,5 +1,5 @@
 {
-  "name": "mysensors-adapter",
+  "name": "Webthings-mysensors-adapter",
   "display_name": "MySensors",
   "version": "0.0.1",
   "description": "MySensors adapter for Mozilla WebThings Gateway",
@@ -39,5 +39,26 @@
     },
     "plugin": true,
     "exec": "python3 {path}/main.py",
+    "config": {
+      "Gateway": "USB Serial gateway",
+      "USB device name": "ttyUSB0"
+    },
+    "schema": {
+      "type": "object",
+      "required": [
+        "Gateway"
+      ],
+      "properties": {
+        "Gateway": {
+	      "type": "string",
+          "enum": [ "USB Serial gateway", "Module connected to GPIO pins" ],
+          "description": "How are you talking to the MySensors network? Via a USB device is most common."
+	    },
+        "USB device name": {
+          "type": "string",
+          "description": "If you are using a USB connected gateway, What is the technical name of the USB device? You can try 'ttyUSB0'."
+        },
+      }
+    }
   }
 }
