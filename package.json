@@ -41,7 +41,7 @@
     "exec": "python3 {path}/main.py",
     "config": {
       "Gateway": "USB Serial gateway",
-      "USB device name": "ttyUSB0"
+      "USB device name": "/dev/ttyUSB0"
     },
     "schema": {
       "type": "object",
@@ -56,7 +56,7 @@
 	    },
         "USB device name": {
           "type": "string",
-          "description": "If you are using a USB connected gateway, What is the technical name of the USB device? You can try 'ttyUSB0'."
+          "description": "If you are using a USB connected gateway, What is the technical name of the USB device? You can try '/dev/ttyUSB0' or '/dev/ttyACM0'."
         },
       }
     }

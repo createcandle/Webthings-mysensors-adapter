@@ -14,7 +14,7 @@ mkdir lib
 mkdir package
 
 # Pull down Python dependencies
-pip3 install -r requirements.txt -t lib --no-binary pyHS100 --prefix ""
+pip3 install -r requirements.txt -t lib --no-binary pyMySensors --prefix ""
 
 # Put package together
 cp -r lib pkg LICENSE package.json *.py package/
@@ -28,4 +28,4 @@ find lib -type f -exec sha256sum {} \; >> SHA256SUMS
 cd -
 
 # Make the tarball
-tar czf "tplink-adapter-${version}.tgz" package
+tar czf "Webthings-mysensors-adapter-${version}.tgz" package
