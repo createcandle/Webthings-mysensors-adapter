@@ -64,7 +64,7 @@ class MySensorsAdapter(Adapter):
                                     
                                     targetNode.set_property(str(message.child_id),float(message.payload))
                                     targetNode.notify_property_changed(targetProperty)
-                                    print("-property updated")
+                                    print("-adapter updated property")
 
                             except Exception as ex:
                                 print("Couldn't update existing property (does it exist?): " + ex)
@@ -105,7 +105,7 @@ class MySensorsAdapter(Adapter):
                     print("-node index = " + str(nodeIndex))
                     self._add_device(self.GATEWAY.sensors[nodeIndex])
                     
-                    print("-new node added to device list")
+                    print("-Adding process complete")
                 except Exception as ex:
                     print("-failed to add new device:" + str(ex))
                     
@@ -124,6 +124,7 @@ class MySensorsAdapter(Adapter):
         if str(node.sensor_id) not in self.devices:
             print("+ADDING DEVICE: " + str(node.sketch_name))
             device = MySensorsDevice(self, node.sensor_id, node)
+            print("almost")
             self.handle_device_added(device)
             return
         else:

@@ -10,7 +10,7 @@ import mysensors.mysensors as mysensors
 class MySensorsProperty(Property):
     """MySensors property type."""
 
-    def __init__(self, device, name, description, value):
+    def __init__(self, device, name, description, value, node_id, child_id, subchild_id):
         """
         Initialize the object.
 
@@ -28,6 +28,10 @@ class MySensorsProperty(Property):
         Property.__init__(self, device, name, description)
         self.set_cached_value(value)
         
+        self.node_id = node_id
+        self.child_id = child_id
+        self.subchild_id = subchild_id
+
         #self.device = device
         #self.name = name
         #self.description = description
@@ -59,7 +63,22 @@ class MySensorsProperty(Property):
         except SmartDeviceException:
             return
         '''
+        
+        
+        
         print("property -> set_value")
+        print("->name " + str(self.name))
+        print("->devi " + str(self.device))
+        print("->node_id " + str(self.node_id))
+        print("->child_id " + str(self.child_id))
+        print("->subchild " + str(self.subchild_id))
+        
+        print("ABOUT TO TRIGGER")
+        # To set sensor 1, child 1, sub-type V_LIGHT (= 2), with value 1.
+        self.device.adapter.GATEWAY.set_child_value(int(self.node_id), int(self.child_id), int(self.subchild_id), value)
+        print("-did it trigger?")
+        
+        
         self.set_cached_value(value)
         self.device.notify_property_changed(self)
 
@@ -71,6 +90,9 @@ class MySensorsProperty(Property):
         sysinfo -- current sysinfo dict for the device
         emeter -- current emeter for the device
         """
+        
+        print("!! updating property now !!")
+        
         '''
         if self.name == 'on':
             value = self.device.is_on(sysinfo)
@@ -87,6 +109,7 @@ class MySensorsProperty(Property):
         else:
             return
         '''
+        
         print("property -> update")
         if value != self.value:
             self.set_cached_value(value)
