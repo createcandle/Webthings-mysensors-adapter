@@ -9,7 +9,8 @@ import time
 
 sys.path.append(path.join(path.dirname(path.abspath(__file__)), 'lib'))
 
-from pkg.mysensors_adapter import MySensorsAdapter
+from pkg.mysensors_adapter import MySensorsAdapter  # noqa
+
 
 _API_VERSION = {
     'min': 2,
