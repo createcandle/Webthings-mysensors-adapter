@@ -305,8 +305,7 @@ class MySensorsDevice(Device):
 
 
             elif child.type == 9:                       # Wind
-                if new_sub_type == 8: # V_WIND
-                    self._type.append('MultiLevelSensor')             
+                if new_sub_type == 8: # V_WIND         
                     self.properties[targetPropertyID] = MySensorsProperty(
                         self,
                         targetPropertyID,
@@ -329,7 +328,6 @@ class MySensorsDevice(Device):
 
             elif child.type == 10:                      # Rain
                 if new_sub_type == 6: # V_RAIN
-                    self._type.append('MultiLevelSensor')
                     self.properties[targetPropertyID] = MySensorsProperty(
                         self,
                         targetPropertyID,
@@ -340,7 +338,6 @@ class MySensorsDevice(Device):
                         },
                         new_value, new_node_id, new_child_id, new_sub_type)
                 if new_sub_type == 7: # V_RAINRATE
-                    self._type.append('MultiLevelSensor')
                     self.properties[targetPropertyID] = MySensorsProperty(
                         self,
                         targetPropertyID,
@@ -354,7 +351,6 @@ class MySensorsDevice(Device):
 
             elif child.type == 11:                      # UV level
                 if new_sub_type == 11: # V_UV
-                    self._type.append('MultiLevelSensor') 
                     self.properties[targetPropertyID] = MySensorsProperty(
                         self,
                         targetPropertyID,
@@ -367,7 +363,6 @@ class MySensorsDevice(Device):
 
             elif child.type == 12:                      # Weight
                 if new_sub_type == 12: # V_WEIGHT
-                    self._type.append('MultiLevelSensor')
                     self.properties[targetPropertyID] = MySensorsProperty(
                         self,
                         targetPropertyID,
@@ -464,7 +459,6 @@ class MySensorsDevice(Device):
                         new_value, new_node_id, new_child_id, new_sub_type)
 
             elif child.type == 16:                      # Light level
-                self._type.append('MultiLevelSensor')
                 self.properties[targetPropertyID] = MySensorsProperty(
                     self,
                     targetPropertyID,
@@ -475,10 +469,10 @@ class MySensorsDevice(Device):
                     },
                     new_value, new_node_id, new_child_id, new_sub_type)
 
-            elif child.type == 17:                      # Arduino node
-                pass                 
+            elif child.type == 17:                      # Arduino node. This should not be turned into a property.
+                pass #          
 
-            elif child.type == 18:                      # Arduino repeater
+            elif child.type == 18:                      # Arduino repeater. This should not be turned into a property.
                 pass
 
             elif child.type == 19:                      # Lock                        
@@ -535,7 +529,6 @@ class MySensorsDevice(Device):
 
             elif child.type == 23:                      # CUSTOM
                 if new_sub_type == 48: # V_CUSTOM
-                    self._type.append('MultiLevelSensor') 
                     self.properties[targetPropertyID] = MySensorsProperty(
                         self,
                         targetPropertyID,
@@ -548,7 +541,6 @@ class MySensorsDevice(Device):
 
             elif child.type == 24:                      # S_DUST
                 if new_sub_type == 37: # V_LEVEL
-                    self._type.append('MultiLevelSensor') 
                     if prefix != '':
                         self.properties[targetPropertyID] = MySensorsProperty(
                             self,
@@ -710,7 +702,6 @@ class MySensorsDevice(Device):
                         self,
                         targetPropertyID,
                         {
-                            '@type': 'OpenProperty',
                             'label': new_description,
                             'type': 'boolean',
                             'readOnly': True,
