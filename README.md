@@ -1,6 +1,7 @@
 # MySensors-adapter
 
 A MySensors adapter for the Mozilla WebThings Gateway.
+https://github.com/mozilla-iot/gateway
 
 It's built on top of pyMySensors by Theo Lind:
 https://github.com/theolind/pymysensors
