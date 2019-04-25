@@ -1,6 +1,6 @@
 {
-  "name": "Webthings-mysensors-adapter",
-  "display_name": "MySensors",
+  "name": "mysensors-adapter",
+  "display_name": "MySensors adapter",
   "version": "0.0.1",
   "description": "MySensors adapter for Mozilla WebThings Gateway",
   "author": "CreateCandle",
@@ -12,7 +12,7 @@
     "mysensors",
     "arduino"
   ],
-  "homepage": "https://github.com/createcandle",
+  "homepage": "https://github.com/createcandle/Webthings-mysensors-adapter",
   "license": "MPL-2.0",
   "repository": {
     "type": "git",
