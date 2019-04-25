@@ -1,11 +1,9 @@
 """MySensors adapter for Mozilla WebThings Gateway."""
 
-from gateway_addon import Property
-#from pyHS100 import SmartDeviceException
-
-#from .util import hsv_to_rgb, rgb_to_hsv
 import mysensors.mysensors as mysensors
 
+from gateway_addon import Property
+from .util import pretty, is_a_number, get_int_or_float
 
 class MySensorsProperty(Property):
     """MySensors property type."""
@@ -19,29 +17,36 @@ class MySensorsProperty(Property):
         description -- description of the property, as a dictionary
         value -- current value of this property
         """
+        print()
         print("initialising property")
-        print("-device " + str(device))
-        print("-name: " + str(name))
-        print("-description: " + str(description))
-        print("-value: " + str(value))
-        
-        Property.__init__(self, device, name, description)
-        self.set_cached_value(value)
-        
-        self.node_id = node_id
-        self.child_id = child_id
-        self.subchild_id = subchild_id
+        #print("-device " + str(device))
+        #print("-name: " + str(name))
+        #print("-description: " + str(description))
+        #print("-value: " + str(value))
+        try:
+            Property.__init__(self, device, name, description)
+            self.set_cached_value(value)
 
-        #self.device = device
-        #self.name = name
-        #self.description = description
-        #self.value = value
-        
-        #self.set_cached_value(value)
-        #self.value = value #hmm, test
-        #self.device = device
-        print("property value = " + str(self.value))
-        print("self.device inside property = " + str(self.device))
+            #self.device = device
+            self.node_id = node_id # These three are used in the set_value function to send a message back to the proper node in the MySensors network.
+            self.child_id = child_id
+            self.subchild_id = subchild_id
+
+            #self.device = device
+            #self.name = name
+            #self.description = description
+            #self.value = value
+
+            #self.set_cached_value(value)
+            #self.value = value #hmm, test
+            #self.device = device
+            #print("property value = " + str(self.value))
+            #print("self.device inside property = " + str(self.device))
+            self.device.notify_property_changed(self)
+            print("property init done")
+            
+        except Exception as ex:
+            print("inside adding property error: " + str(ex))
 
 
     def set_value(self, value):
@@ -50,231 +55,50 @@ class MySensorsProperty(Property):
 
         value -- the value to set
         """
-        '''
-        try:
-            if self.name == 'on':
-                self.device.hs100_dev.state = 'ON' if value else 'OFF'
-            elif self.name == 'led-on':
-                self.device.hs100_dev.led = value
-            elif self.name == 'level':
-                self.device.hs100_dev.brightness = value
-            else:
-                return
-        except SmartDeviceException:
-            return
-        '''
         
+        #print("property -> set_value")
+        #print("->name " + str(self.name))
+        #print("->devi " + str(self.device))
+        #print("->node_id " + str(self.node_id))
+        #print("->child_id " + str(self.child_id))
+        #print("->subchild " + str(self.subchild_id))
         
-        
-        print("property -> set_value")
-        print("->name " + str(self.name))
-        print("->devi " + str(self.device))
-        print("->node_id " + str(self.node_id))
-        print("->child_id " + str(self.child_id))
-        print("->subchild " + str(self.subchild_id))
-        
-        print("ABOUT TO TRIGGER")
-        # To set sensor 1, child 1, sub-type V_LIGHT (= 2), with value 1.
-        self.device.adapter.GATEWAY.set_child_value(int(self.node_id), int(self.child_id), int(self.subchild_id), value)
-        print("-did it trigger?")
-        
-        
-        self.set_cached_value(value)
-        self.device.notify_property_changed(self)
 
-        
-    def update(self, value):
+        try:
+            print("<< MESSAGE FROM WEBTHINGS GATEWAY TO MYSENSORS NETWORK: " + str(value))
+            # To set sensor 1, child 1, sub-type V_LIGHT (= 2), with value 1.
+            intNodeID = int(float(self.node_id))
+            intChildID = int(float(self.child_id))
+            intSubchildID = int(float(self.subchild_id))
+
+            if is_a_number(value):
+                new_value = get_int_or_float(value)
+            else:
+                new_value = str(value)
+            
+            try:
+                #print("-target values inside PyMySensors A: " + str(self.device.adapter.GATEWAY.sensors[self.node_id].children[self.child_id].values))
+
+                #print("-target values inside PyMySensors B: " + str(self.device.adapter.GATEWAY.sensors[intNodeID].children[intChildID].values))
+                self.device.adapter.GATEWAY.set_child_value(intNodeID, intChildID, intSubchildID, new_value) # here we send the data to the MySensors network.
+                #print("-updated values inside PyMySensors: " + str(self.device.adapter.GATEWAY.sensors[intNodeID].children[intChildID].values))
+            except Exception as ex:
+                print("send value inside property object failed. Error: " + str(ex))
+
+        except Exception as ex:
+            print("set_value inside property object failed. Error: " + str(ex))
+
+
+    # I'm not sure that this function is ever used..
+    def update(self, value): 
         """
         Update the current value, if necessary.
 
-        sysinfo -- current sysinfo dict for the device
-        emeter -- current emeter for the device
+        value -- the value to update
         """
-        
-        print("!! updating property now !!")
-        
-        '''
-        if self.name == 'on':
-            value = self.device.is_on(sysinfo)
-        elif self.name == 'led-on':
-            value = self.device.is_led_on(sysinfo)
-        elif self.name == 'level':
-            value = self.device.brightness(sysinfo)
-        elif self.name == 'instantaneousPower':
-            value = self.device.power(emeter)
-        elif self.name == 'voltage':
-            value = self.device.voltage(emeter)
-        elif self.name == 'current':
-            value = self.device.current(emeter)
-        else:
-            return
-        '''
         
         print("property -> update")
-        if value != self.value:
-            self.set_cached_value(value)
-            self.device.notify_property_changed(self)
-
         
-'''
-class MySensorsTemperatureProperty(MySensorsProperty):
-    """Property type for TP-Link smart plugs."""
-
-    def set_value(self, value):
-        """
-        Set the current value of the property.
-
-        value -- the value to set
-        """
-        try:
-            if self.name == 'on':
-                self.device.hs100_dev.state = 'ON' if value else 'OFF'
-            elif self.name == 'led-on':
-                self.device.hs100_dev.led = value
-            elif self.name == 'level':
-                self.device.hs100_dev.brightness = value
-            else:
-                return
-        except SmartDeviceException:
-            return
-
-        self.set_cached_value(value)
-        self.device.notify_property_changed(self)
-
-    def update(self, sysinfo, emeter):
-        """
-        Update the current value, if necessary.
-
-        sysinfo -- current sysinfo dict for the device
-        emeter -- current emeter for the device
-        """
-        if self.name == 'on':
-            value = self.device.is_on(sysinfo)
-        elif self.name == 'led-on':
-            value = self.device.is_led_on(sysinfo)
-        elif self.name == 'level':
-            value = self.device.brightness(sysinfo)
-        elif self.name == 'instantaneousPower':
-            value = self.device.power(emeter)
-        elif self.name == 'voltage':
-            value = self.device.voltage(emeter)
-        elif self.name == 'current':
-            value = self.device.current(emeter)
-        else:
-            return
-
         if value != self.value:
             self.set_cached_value(value)
             self.device.notify_property_changed(self)
-
-
-
-
-class MySensorsPlugProperty(MySensorsProperty):
-    """Property type for TP-Link smart plugs."""
-
-    def set_value(self, value):
-        """
-        Set the current value of the property.
-
-        value -- the value to set
-        """
-        try:
-            if self.name == 'on':
-                self.device.hs100_dev.state = 'ON' if value else 'OFF'
-            elif self.name == 'led-on':
-                self.device.hs100_dev.led = value
-            elif self.name == 'level':
-                self.device.hs100_dev.brightness = value
-            else:
-                return
-        except SmartDeviceException:
-            return
-
-        self.set_cached_value(value)
-        self.device.notify_property_changed(self)
-
-    def update(self, sysinfo, emeter):
-        """
-        Update the current value, if necessary.
-
-        sysinfo -- current sysinfo dict for the device
-        emeter -- current emeter for the device
-        """
-        if self.name == 'on':
-            value = self.device.is_on(sysinfo)
-        elif self.name == 'led-on':
-            value = self.device.is_led_on(sysinfo)
-        elif self.name == 'level':
-            value = self.device.brightness(sysinfo)
-        elif self.name == 'instantaneousPower':
-            value = self.device.power(emeter)
-        elif self.name == 'voltage':
-            value = self.device.voltage(emeter)
-        elif self.name == 'current':
-            value = self.device.current(emeter)
-        else:
-            return
-
-        if value != self.value:
-            self.set_cached_value(value)
-            self.device.notify_property_changed(self)
-
-
-class MySensorsBulbProperty(MySensorsProperty):
-    """Property type for MySensors smart bulbs."""
-
-    def set_value(self, value):
-        """
-        Set the current value of the property.
-
-        value -- the value to set
-        """
-        try:
-            if self.name == 'on':
-                self.device.hs100_dev.state = 'ON' if value else 'OFF'
-            elif self.name == 'color':
-                self.device.hs100_dev.hsv = rgb_to_hsv(value)
-            elif self.name == 'level':
-                self.device.hs100_dev.brightness = value
-            elif self.name == 'colorTemperature':
-                value = max(value, self.description['minimum'])
-                value = min(value, self.description['maximum'])
-                self.device.hs100_dev.color_temp = int(value)
-            else:
-                return
-        except SmartDeviceException:
-            return
-
-        self.set_cached_value(value)
-        self.device.notify_property_changed(self)
-
-    def update(self, sysinfo, light_state, emeter):
-        """
-        Update the current value, if necessary.
-
-        sysinfo -- current sysinfo dict for the device
-        light_state -- current state of the light
-        emeter -- current emeter for the device
-        """
-        if self.name == 'on':
-            value = self.device.is_on(light_state)
-        elif self.name == 'color':
-            value = hsv_to_rgb(*self.device.hsv(light_state))
-        elif self.name == 'level':
-            value = self.device.brightness(light_state)
-        elif self.name == 'colorTemperature':
-            value = self.device.color_temp(light_state)
-        elif self.name == 'instantaneousPower':
-            value = self.device.power(emeter)
-        elif self.name == 'voltage':
-            value = self.device.voltage(emeter)
-        elif self.name == 'current':
-            value = self.device.current(emeter)
-        else:
-            return
-
-        if value != self.value:
-            self.set_cached_value(value)
-            self.device.notify_property_changed(self)
-'''

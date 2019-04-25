@@ -7,7 +7,7 @@ import mysensors.mysensors as mysensors
 
 from gateway_addon import Device
 from .mysensors_property import MySensorsProperty #, MySensorsTemperatureProperty
-from .util import pretty, is_a_number
+from .util import pretty, is_a_number, get_int_or_float
 
 
 
@@ -24,553 +24,788 @@ class MySensorsDevice(Device):
         index -- index inside parent device
         """
         
-        print("Device init: " + str(node.sketch_name))
+        #print("Device init: " + str(node.sketch_name))
         Device.__init__(self, adapter, _id)
         
         self.adapter = adapter
         self.id = str(_id)
         self._id = str(_id)
-        self.node = node
         self.name = node.sketch_name
         self.description = node.sketch_name
         self._type = []
-        self.properties = {} # this should already be initialised?
-        print("device self.properties at init: " + str(self.properties))
+        self.properties = {}
+        #print("device self.properties at init: " + str(self.properties))
+        self.connected_notify(True)
 
-        base_node_id = _id
+
+    def add_child(self, child, message, sub_type, value):
+        print()
+        print("+ DEVICE.ADD_CHILD with child_id: " + str(message.child_id))
         
-        for childIndex in self.node.children:
-            
-            child = self.node.children[childIndex]
-            print(str(child))
-            
-            base_node_child_id = str(child.id) # we need a unique ID to create a property for each MySensors Child (and then each subtype of that child)
-            
-            print("child id = " + base_node_child_id)
-            #print("child type = " + str(child.type))
-            #print("desc = " + str(child.description))
-            #print("val = " + str(child.values))
-            
-            
-            if not child.values: # If the value field is empty then just skip it.
-                print("! no values? skipping")
-                continue
-            if base_node_child_id == 43: # If this is a prefix, then don't turn it into a property.
-                print("! prefix! skipping")
-                continue
-            
+
+        # PREFIX
+        # First, let's see if there's a prefix. If there is, we should scrape it from the child's value object
+        prefix = '' # prefix starts as an empty string.
+        try:
             for childSubType in child.values: # The values dictionary can contain multiple items. We loop over each one.
-                print("childSubType = " + str(childSubType)) # The index (id) of the value in the values dictionary. This is the mysensors subtype.
-                
-                node_child_id = base_node_child_id + "-" + str(childSubType) # Generating a unique name, e.g. 5-2 for child 5 with subtype 2.
-                base_node_subchild_id = str(childSubType)
-                
-                if not is_a_number(child.values[childSubType]): # if the actual value is a string, we create a new string property.
-                    # still waiting to figure out how a string can be passed to the gateway (which property should be used)
-                    realValue = str(child.values[childSubType])
-                    
-                    if child.type == 36:                      # String
-                        self.properties[child.id] = MySensorsProperty(
+                if childSubType == 43: # If this is a prefix, then don't turn it into a property.
+                    print("-Found a prefix")
+                    prefix = str(child.values[childSubType])
+        except:
+            print("Weird: error while looking for a prefix")
+
+
+        try:
+            new_node_id = str(message.node_id)
+            new_child_id = str(message.child_id)
+            new_sub_type = sub_type
+            #new_value = str(value)
+
+            if not child.description:
+                print("-Node had no description")
+                new_description = ''
+            else:
+                new_description = child.description
+
+            if is_a_number(value):
+                new_value = get_int_or_float(value)
+            else:
+                new_value = str(value)
+
+
+            print("Child object: " + str(child))
+            print("child.type = " + str(child.type)) # Funnily enough, this S_ type is not really needed.
+            print("child_id = " + str(new_child_id))
+            print("sub_type = " + str(new_sub_type))
+            print("property description = " + str(new_description))
+            print("value = " + str(new_value))
+
+            targetPropertyID = str(new_node_id) + "-" + str(new_child_id) + "-" + str(new_sub_type) # e.g. 2-5-36
+
+            print("child.type: " + str(child.type))
+            print("new_sub_type: " + str(new_sub_type))
+
+        except Exception as ex:
+            print("Error during preparation to add new property: " + str(ex))
+
+        try:
+            if child.type == 0:                         # Door
+                if new_sub_type == 16: # V_TRIPPED
+                    self._type.append('DoorSensor')                       
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            '@type': 'OpenProperty',
+                            'label': new_description,
+                            'type': 'boolean',
+                            'readOnly': True,
+                        },
+                        new_value, new_node_id, new_child_id, new_sub_type)
+
+                if new_sub_type == 15: # V_ARMED
+                    self._type.append('OnOffSwitch')                       
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            '@type': 'OnOffProperty',
+                            'label': new_description,
+                            'type': 'boolean',
+                        },
+                        new_value, new_node_id, new_child_id, new_sub_type)
+
+            elif child.type == 1:                       # Motion
+                if new_sub_type == 16: # V_TRIPPED
+                    self._type.append('MotionSensor')   
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            '@type': 'MotionProperty',
+                            'label': new_description,
+                            'type': 'boolean',
+                        },
+                        new_value, new_node_id, new_child_id, new_sub_type)
+                if new_sub_type == 15: # V_ARMED
+                    self._type.append('OnOffSwitch')                       
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            '@type': 'OnOffProperty',
+                            'label': new_description,
+                            'type': 'boolean',
+                        },
+                        new_value, new_node_id, new_child_id, new_sub_type)
+
+            elif child.type == 2:                       # Smoke
+                if new_sub_type == 16: # V_TRIPPED
+                    self._type.append('Alarm')           
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            '@type': 'AlarmProperty',
+                            'label': new_description,
+                            'type': 'boolean',
+                        },
+                        new_value, new_node_id, new_child_id, new_sub_type)
+                if new_sub_type == 15: # V_ARMED
+                    self._type.append('OnOffSwitch')                       
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            '@type': 'OnOffProperty',
+                            'label': new_description,
+                            'type': 'boolean',
+                        },
+                        new_value, new_node_id, new_child_id, new_sub_type)
+
+            elif child.type == 3:                       # Binary
+                if new_sub_type == 2: # V_STATUS
+                    self._type.append('SmartPlug')           
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            '@type': 'OnOffProperty',
+                            'label': new_description,
+                            'type': 'boolean',
+                        },
+                        new_value, new_node_id, new_child_id, new_sub_type)
+                if new_sub_type == 17: # V_WATT (power meter)          
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            '@type': 'InstantaneousPowerProperty',
+                            'label': new_description,
+                            'type': 'number',
+                            'unit': 'watt',
+                        },
+                        new_value, new_node_id, new_child_id, new_sub_type)
+
+            elif child.type == 4:                       # Dimmer
+                if new_sub_type == 2: # V_STATUS
+                    self._type.append('OnOffSwitch')
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            '@type': 'OnOffProperty',
+                            'label': new_description,
+                            'type': 'boolean',
+                        },
+                        new_value, new_node_id, new_child_id, new_sub_type)
+                if new_sub_type == 3: # V_PERCENTAGE
+                    self._type.append('Light')
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            '@type': 'BrightnessProperty',
+                            'label': new_description,
+                            'minimum': 0,
+                            'maximum': 100,
+                            'type': 'number',
+                            'unit': 'percent',
+                        },
+                        new_value, new_node_id, new_child_id, new_sub_type)
+                if new_sub_type == 17: # V_WATT
+                    self._type.append('EnergyMonitor')
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            '@type': 'InstantaneousPowerProperty',
+                            'label': new_description,
+                            'type': 'number',
+                            'unit': 'watt',
+                            'readOnly': True,
+                        },
+                        new_value, new_node_id, new_child_id, new_sub_type)
+
+            elif child.type == 5:                       # Window covers (percentage)
+                if new_sub_type == 3: # V_PERCENTAGE
+                    self._type.append('MultiLevelSwitch')
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            '@type': 'LevelProperty',
+                            'label': new_description,
+                            'minimum': 0,
+                            'maximum': 100,
+                            'type': 'number',
+                            'unit': 'percent',
+                        },
+                        new_value, new_node_id, new_child_id, new_sub_type)
+
+
+            elif child.type == 6:                       # Temperature
+                if new_sub_type == 0: # V_TEMP
+                    self._type.append('MultiLevelSensor')
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            '@type': 'TemperatureProperty',
+                            'label': new_description,
+                            'type': 'number',
+                            'unit': 'degree celsius',
+                            'readOnly': True,
+                        },
+                    new_value, new_node_id, new_child_id, new_sub_type)
+
+            elif child.type == 7:                       # Humidity
+                if new_sub_type == 1: # V_HUM
+                    self._type.append('MultiLevelSensor')
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            '@type': 'LevelProperty',
+                            'label': new_description,
+                            'minimum': 0,
+                            'maximum': 100,
+                            'type': 'number',
+                            'unit': 'percent',
+                            'readOnly': True,
+                        },
+                        new_value, new_node_id, new_child_id, new_sub_type)
+
+            elif child.type == 8:                       # Barometer
+                if new_sub_type == 4: # V_PRESSURE (atmospheric pressure)
+                    self._type.append('MultiLevelSensor')                 
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            '@type': 'LevelProperty',
+                            'label': new_description,
+                            'minimum': 900,
+                            'maximum': 1100,
+                            'type': 'number',
+                            'unit': 'hPa',
+                            'readOnly': True,
+                        },
+                        new_value, new_node_id, new_child_id, new_sub_type)
+                if new_sub_type == 5: # V_FORECAST (weather prediction)
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            'label': new_description,
+                            'type': 'string',
+                            'readOnly': True,
+                        },
+                        new_value, new_node_id, new_child_id, new_sub_type)
+
+
+            elif child.type == 9:                       # Wind
+                if new_sub_type == 8: # V_WIND
+                    self._type.append('MultiLevelSensor')             
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            'label': new_description,
+                            'type': 'number',
+                            'readOnly': True,
+                        },
+                        new_value, new_node_id, new_child_id, new_sub_type)
+                if new_sub_type == 10: # V_DIRECTION (of wind)
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            'label': new_description,
+                            'type': 'string',
+                            'readOnly': True,
+                        },
+                        new_value, new_node_id, new_child_id, new_sub_type)
+
+            elif child.type == 10:                      # Rain
+                if new_sub_type == 6: # V_RAIN
+                    self._type.append('MultiLevelSensor')
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            'label': new_description,
+                            'type': 'number',
+                            'readOnly': True,
+                        },
+                        new_value, new_node_id, new_child_id, new_sub_type)
+                if new_sub_type == 7: # V_RAINRATE
+                    self._type.append('MultiLevelSensor')
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            'label': new_description,
+                            'type': 'number',
+                            'readOnly': True,
+                        },
+                        new_value, new_node_id, new_child_id, new_sub_type)
+
+
+            elif child.type == 11:                      # UV level
+                if new_sub_type == 11: # V_UV
+                    self._type.append('MultiLevelSensor') 
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            'label': new_description,
+                            'type': 'number',
+                            'readOnly': True,
+                        },
+                        new_value, new_node_id, new_child_id, new_sub_type)
+
+            elif child.type == 12:                      # Weight
+                if new_sub_type == 12: # V_WEIGHT
+                    self._type.append('MultiLevelSensor')
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            'label': new_description,
+                            'type': 'number',
+                            'readOnly': True,
+                        },
+                        new_value, new_node_id, new_child_id, new_sub_type)
+
+            elif child.type == 13:                      # Power measuring device, like power meters
+                if new_sub_type == 17: # V_WATT
+                    self._type.append('EnergyMonitor')
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            '@type': 'InstantaneousPowerProperty',
+                            'label': new_description,
+                            'type': 'number',
+                            'unit': 'watt',
+                            'readOnly': True,
+                        },
+                        new_value, new_node_id, new_child_id, new_sub_type)
+
+            elif child.type == 14:                      # Heater
+                if new_sub_type == 0: # V_TEMP
+                    self._type.append('MultiLevelSensor')
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            '@type': 'TemperatureProperty',
+                            'label': new_description,
+                            'type': 'number',
+                            'unit': 'degree celsius',
+                            'readOnly': True,
+                        },
+                    new_value, new_node_id, new_child_id, new_sub_type)
+                if new_sub_type == 45: # V_HVAC_SETPOINT_HEAT
+                    self._type.append('MultiLevelSwitch')
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            '@type': 'LevelProperty',
+                            'label': new_description,
+                            'minimum':10,
+                            'maximum':30,
+                            'type': 'number',
+                            'unit': 'degree celsius',
+                        },
+                    new_value, new_node_id, new_child_id, new_sub_type)
+
+                    # TODO: V_HVAC_FLOW_STATE. Mozilla Gateway has no support for a multiple-buttons type?
+
+
+
+                if new_sub_type == 2: #V_status
+                    self._type.append('OnOffSwitch')
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            '@type': 'OnOffProperty',
+                            'label': new_description,
+                            'type': 'boolean',
+                        },
+                        new_value, new_node_id, new_child_id, new_sub_type)
+
+
+            elif child.type == 15:                      # Distance
+                self._type.append('MultiLevelSensor')
+                if prefix != '':
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            'label': new_description,
+                            'type': 'number',
+                            'unit': prefix,
+                            'readOnly': True,
+                        },
+                        new_value, new_node_id, new_child_id, new_sub_type)
+                else:
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            'label': new_description,
+                            'type': 'number',
+                            'readOnly': True,
+                        },
+                        new_value, new_node_id, new_child_id, new_sub_type)
+
+            elif child.type == 16:                      # Light level
+                self._type.append('MultiLevelSensor')
+                self.properties[targetPropertyID] = MySensorsProperty(
+                    self,
+                    targetPropertyID,
+                    {
+                        'label': new_description,
+                        'type': 'number',
+                        'readOnly': True,
+                    },
+                    new_value, new_node_id, new_child_id, new_sub_type)
+
+            elif child.type == 17:                      # Arduino node
+                pass                 
+
+            elif child.type == 18:                      # Arduino repeater
+                pass
+
+            elif child.type == 19:                      # Lock                        
+                if new_sub_type == 36: # V_LOCK_STATUS
+                    self._type.append('OnOffSwitch')                    
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            '@type': 'OnOffProperty',
+                            'label': new_description,
+                            'type': 'boolean',
+                        },
+                        new_value, new_node_id, new_child_id, new_sub_type)
+
+            elif child.type == 20:                      # Ir sender/receiver device
+                pass       
+
+            elif child.type == 21:                      # Water flow
+                if new_sub_type == 37: # V_LEVEL
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            'label': new_description,
+                            'type': 'number',
+                            'readOnly': True,
+                        },
+                        new_value, new_node_id, new_child_id, new_sub_type)
+
+            elif child.type == 22:                      # Air quality
+                if new_sub_type == 37: # V_LEVEL
+                    if prefix != '':
+                        self.properties[targetPropertyID] = MySensorsProperty(
                             self,
-                            node_child_id,
+                            targetPropertyID,
                             {
-                                'label': child.description,
-                                'type': 'string',
-                            },
-                            realValue, base_node_id, base_node_child_id, base_node_subchild_id)
-
-                
-                else:                                           # The child's value is a number. Let's create a property for it.
-                    print("is a number")
-                    
-                    realValue = float(child.values[childSubType])
-                    print("realval = " + str(realValue))
-                    print("self.adapter = " + str(self.adapter))
-
-                    if child.type == 0:                         # Door
-                        if childSubType == 16: # V_TRIPPED
-                            self._type.append('DoorSensor')                       
-                            self.properties[node_child_id] = MySensorsProperty(
-                                self,
-                                node_child_id,
-                                {
-                                    '@type': 'OpenProperty',
-                                    'label': child.description,
-                                    'type': 'boolean',
-                                },
-                                realValue, base_node_id, base_node_child_id, base_node_subchild_id)
-                            
-                        if childSubType == 15: # V_ARMED
-                            self._type.append('OnOffSwitch')                       
-                            self.properties[node_child_id] = MySensorsProperty(
-                                self,
-                                node_child_id,
-                                {
-                                    '@type': 'OnOffProperty',
-                                    'label': child.description,
-                                    'type': 'boolean',
-                                },
-                                realValue, base_node_id, base_node_child_id, base_node_subchild_id)
-                            
-                    elif child.type == 1:                       # Motion
-                        if childSubType == 16: # V_TRIPPED
-                            self._type.append('MotionSensor')   
-                            self.properties[node_child_id] = MySensorsProperty(
-                                self,
-                                node_child_id,
-                                {
-                                    '@type': 'MotionProperty',
-                                    'label': child.description,
-                                    'type': 'boolean',
-                                },
-                                realValue, base_node_id, base_node_child_id, base_node_subchild_id)
-                        if childSubType == 15: # V_ARMED
-                            self._type.append('OnOffSwitch')                       
-                            self.properties[node_child_id] = MySensorsProperty(
-                                self,
-                                node_child_id,
-                                {
-                                    '@type': 'OnOffProperty',
-                                    'label': child.description,
-                                    'type': 'boolean',
-                                },
-                                realValue, base_node_id, base_node_child_id, base_node_subchild_id)
-                        
-                    elif child.type == 2:                       # Smoke
-                        if childSubType == 16: # V_TRIPPED
-                            self._type.append('Alarm')           
-                            self.properties[node_child_id] = MySensorsProperty(
-                                self,
-                                node_child_id,
-                                {
-                                    '@type': 'AlarmProperty',
-                                    'label': child.description,
-                                    'type': 'boolean',
-                                },
-                                realValue, base_node_id, base_node_child_id, base_node_subchild_id)
-                        if childSubType == 15: # V_ARMED
-                            self._type.append('OnOffSwitch')                       
-                            self.properties[node_child_id] = MySensorsProperty(
-                                self,
-                                node_child_id,
-                                {
-                                    '@type': 'OnOffProperty',
-                                    'label': child.description,
-                                    'type': 'boolean',
-                                },
-                                realValue, base_node_id, base_node_child_id, base_node_subchild_id)
-                        
-                    elif child.type == 3:                       # Binary
-                        if childSubType == 2: # V_STATUS
-                            self._type.append('SmartPlug')           
-                            self.properties[node_child_id] = MySensorsProperty(
-                                self,
-                                node_child_id,
-                                {
-                                    '@type': 'OnOffProperty',
-                                    'label': child.description,
-                                    'type': 'boolean',
-                                },
-                                realValue, base_node_id, base_node_child_id, base_node_subchild_id)
-                        if childSubType == 17: # V_WATT (power meter)          
-                            self.properties[node_child_id] = MySensorsProperty(
-                                self,
-                                node_child_id,
-                                {
-                                    '@type': 'InstantaneousPowerProperty',
-                                    'label': child.description,
-                                    'type': 'number',
-                                    'unit': 'watt',
-                                },
-                                realValue, base_node_id, base_node_child_id, base_node_subchild_id)
-                        
-                    elif child.type == 4:                       # Dimmer
-                        if childSubType == 2: # V_STATUS
-                            self._type.append('OnOffSwitch')
-                            self.properties[node_child_id] = MySensorsProperty(
-                                self,
-                                node_child_id,
-                                {
-                                    '@type': 'OnOffProperty',
-                                    'label': child.description,
-                                    'type': 'boolean',
-                                },
-                                realValue, base_node_id, base_node_child_id, base_node_subchild_id)
-                        
-                        if childSubType == 3: # V_PERCENTAGE
-                            self._type.append('Light')
-                            self.properties[node_child_id] = MySensorsProperty(
-                                self,
-                                node_child_id,
-                                {
-                                    '@type': 'BrightnessProperty',
-                                    'label': child.description,
-                                    'minimum': 0,
-                                    'maximum': 100,
-                                    'type': 'number',
-                                    'unit': 'percent',
-                                },
-                                realValue, base_node_id, base_node_child_id, base_node_subchild_id)
-                        
-                    elif child.type == 5:                       # Window covers (percentage)
-                        if childSubType == 3: # V_PERCENTAGE
-                            self._type.append('MultiLevelSwitch')
-                            self.properties[node_child_id] = MySensorsProperty(
-                                self,
-                                node_child_id,
-                                {
-                                    '@type': 'LevelProperty',
-                                    'label': child.description,
-                                    'minimum': 0,
-                                    'maximum': 100,
-                                    'type': 'number',
-                                    'unit': 'percent',
-                                },
-                                realValue, base_node_id, base_node_child_id, base_node_subchild_id)
-                        
-                        
-                    elif child.type == 6:                       # Temperature
-                        if childSubType == 0: # V_TEMP
-                            self._type.append('MultiLevelSensor')
-                            self.properties[node_child_id] = MySensorsProperty(
-                                self,
-                                node_child_id,
-                                {
-                                    '@type': 'TemperatureProperty',
-                                    'label': child.description,
-                                    'type': 'number',
-                                    'unit': 'degree celcius',
-                                    'readOnly': True,
-                                },
-                                realValue, base_node_id, base_node_child_id, base_node_subchild_id)
-
-                    elif child.type == 7:                       # Humidity
-                        if childSubType == 1: # V_HUM
-                            self._type.append('MultiLevelSensor')
-                            self.properties[node_child_id] = MySensorsProperty(
-                                self,
-                                node_child_id,
-                                {
-                                    '@type': 'LevelProperty',
-                                    'label': child.description,
-                                    'minimum': 0,
-                                    'maximum': 100,
-                                    'type': 'number',
-                                    'unit': 'percent',
-                                    #'readOnly': True,
-                                },
-                                realValue, base_node_id, base_node_child_id, base_node_subchild_id)
-
-                    elif child.type == 8:                       # Barometer
-                        if childSubType == 4: # V_PRESSURE (atmospheric pressure)
-                            self._type.append('MultiLevelSensor')                 
-                            self.properties[node_child_id] = MySensorsProperty(
-                                self,
-                                node_child_id,
-                                {
-                                    '@type': 'LevelProperty',
-                                    'label': child.description,
-                                    'minimum': 900,
-                                    'maximum': 1100,
-                                    'type': 'number',
-                                    'unit': 'hPa',
-                                    'readOnly': True,
-                                },
-                                realValue, base_node_id, base_node_child_id, base_node_subchild_id)
-                        if childSubType == 5: # V_FORECAST (weather prediction)
-                            self.properties[node_child_id] = MySensorsProperty(
-                                self,
-                                node_child_id,
-                                {
-                                    'label': child.description,
-                                    'type': 'string',
-                                    'readOnly': True,
-                                },
-                                realValue, base_node_id, base_node_child_id, base_node_subchild_id)
-
-
-                    elif child.type == 9:                       # Wind
-                        if childSubType == 8: # V_WIND
-                            self._type.append('MultiLevelSensor')             
-                            self.properties[node_child_id] = MySensorsProperty(
-                                self,
-                                node_child_id,
-                                {
-                                    'label': child.description,
-                                    'type': 'number',
-                                    #'readOnly': True,
-                                },
-                                realValue, base_node_id, base_node_child_id, base_node_subchild_id)
-                        if childSubType == 10: # V_DIRECTION (of wind)
-                            self.properties[node_child_id] = MySensorsProperty(
-                                self,
-                                node_child_id,
-                                {
-                                    'label': child.description,
-                                    'type': 'string',
-                                    #'readOnly': True,
-                                },
-                                realValue, base_node_id, base_node_child_id, base_node_subchild_id)
-                            
-                    elif child.type == 10:                      # Rain
-                        if childSubType == 6: # V_RAIN
-                            self._type.append('MultiLevelSensor')
-                            self.properties[node_child_id] = MySensorsProperty(
-                                self,
-                                node_child_id,
-                                {
-                                    'label': child.description,
-                                    'type': 'number',
-                                    #'readOnly': True,
-                                },
-                                realValue, base_node_id, base_node_child_id, base_node_subchild_id)
-                        if childSubType == 7: # V_RAINRATE
-                            self._type.append('MultiLevelSensor')
-                            self.properties[node_child_id] = MySensorsProperty(
-                                self,
-                                node_child_id,
-                                {
-                                    'label': child.description,
-                                    'type': 'number',
-                                    #'readOnly': True,
-                                },
-                                realValue, base_node_id, base_node_child_id, base_node_subchild_id)
-                        
-                        
-                    elif child.type == 11:                      # UV level
-                        if childSubType == 11: # V_UV
-                            self._type.append('MultiLevelSensor') 
-                            self.properties[node_child_id] = MySensorsProperty(
-                                self,
-                                node_child_id,
-                                {
-                                    'label': child.description,
-                                    'type': 'number',
-                                    #'readOnly': True,
-                                },
-                                realValue, base_node_id, base_node_child_id, base_node_subchild_id)
-                    elif child.type == 12:                      # Weight
-                        if childSubType == 12: # V_WEIGHT
-                            self._type.append('MultiLevelSensor')
-                            self.properties[node_child_id] = MySensorsProperty(
-                                self,
-                                node_child_id,
-                                {
-                                    'label': child.description,
-                                    'type': 'number',
-                                    #'readOnly': True,
-                                },
-                                realValue, base_node_id, base_node_child_id, base_node_subchild_id)
-                    
-                    elif child.type == 13:                      # Power measuring device, like power meters
-                        self._type.append('EnergyMonitor')
-                        self.properties[node_child_id] = MySensorsProperty(
-                            self,
-                            node_child_id,
-                            {
-                                '@type': 'InstantaneousPowerProperty',
-                                'label': child.description,
+                                'label': new_description,
                                 'type': 'number',
-                                'unit': 'watt',
-                                #'readOnly': True,
+                                'unit': prefix,
+                                'readOnly': True,
                             },
-                            realValue, base_node_id, base_node_child_id, base_node_subchild_id)
-                        
-                    elif child.type == 14:                      # Heater
-                        pass
-                    
-                    elif child.type == 15:                      # Distance
-                        self._type.append('MultiLevelSensor')
-                        self.properties[node_child_id] = MySensorsProperty(
-                            self,
-                            node_child_id,
-                            {
-                                'label': child.description,
-                                'type': 'number',
-                                #'readOnly': True,
-                            },
-                            realValue, base_node_id, base_node_child_id, base_node_subchild_id)
-                        
-                    elif child.type == 16:                      # Light level
-                        self._type.append('MultiLevelSensor')
-                        self.properties[node_child_id] = MySensorsProperty(
-                            self,
-                            node_child_id,
-                            {
-                                'label': child.description,
-                                'type': 'number',
-                                #'readOnly': True,
-                            },
-                            realValue, base_node_id, base_node_child_id, base_node_subchild_id)
-                        
-                    elif child.type == 17:                      # Arduino node
-                        pass                 
-                    
-                    elif child.type == 18:                      # Arduino repeater
-                        pass
-                    
-                    elif child.type == 19:                      # Lock                        
-                        if childSubType == 36: # V_LOCK_STATUS
-                            self._type.append('OnOffSwitch')                    
-                            self.properties[node_child_id] = MySensorsProperty(
-                                self,
-                                node_child_id,
-                                {
-                                    '@type': 'OnOffProperty',
-                                    'label': child.description,
-                                    'type': 'boolean',
-                                },
-                                realValue, base_node_id, base_node_child_id, base_node_subchild_id)
-                        
-                    elif child.type == 20:                      # Ir sender/receiver device
-                        pass       
-                    
-                    elif child.type == 22:                      # Air quality
-                        print("should be adding AIQ level prop")
-                        if childSubType == 37: # V_LEVEL
-                            self._type.append('MultiLevelSensor')
-                            self.properties[node_child_id] = MySensorsProperty( #def __init__(self, device, name, description, value):
-                                self,
-                                node_child_id,
-                                {
-                                    '@type': 'LevelProperty',
-                                    'label': child.description,
-                                    'minimum': 0,
-                                    'maximum': 10000,
-                                    'type': 'number',
-                                    'unit': 'ppm',
-                                    #'readOnly': True,
-                                },
-                                realValue, base_node_id, base_node_child_id, base_node_subchild_id)
-
-                    elif child.type == 25:                      # Scene controller
-                        self._type.append('OnOffSwitch')
-                        self.properties[node_child_id] = MySensorsProperty(
-                            self,
-                            node_child_id,
-                            {
-                                '@type': 'OnOffProperty',
-                                'label': child.description,
-                                'type': 'boolean',
-                            },
-                            realValue, base_node_id, base_node_child_id, base_node_subchild_id)
-                        
-                    elif child.type == 26:                      # RGB light
-                        #self._type.append(['OnOffSwitch', 'Light', 'ColorControl'])
-                        pass
-                    
-                    elif child.type == 27:                      # RGB light with separate white level
-                        #self._type.append(['OnOffSwitch', 'Light', 'ColorControl'])
-                        pass
-                    
-                    elif child.type == 28:                      # Color sensor
-                        self.properties[node_child_id] = MySensorsProperty(
-                            self,
-                            node_child_id,
-                            {
-                                'label': child.description,
-                                'type': 'string',
-                                #'readOnly': True,
-                            },
-                            realValue, base_node_id, base_node_child_id, base_node_subchild_id)
-                        
-                    elif child.type == 29:                      # Thermostat / HVAC
-                        pass
-                    
-                    elif child.type == 30:                      # Volt meter
-                        self._type.append('MultiLevelSensor')
-                        self.properties[node_child_id] = MySensorsProperty(
-                            self,
-                            node_child_id,
-                            {
-                                '@type': 'VoltageProperty',
-                                'label': child.description,
-                                'type': 'number',
-                                'unit': 'volt',
-                            },
-                            realValue, base_node_id, base_node_child_id, base_node_subchild_id)
-                        
-                    elif child.type == 31:                      # Sprinkler
-                        if childSubType == 2: #V_status
-                            self._type.append('OnOffSwitch')
-                            self.properties[node_child_id] = MySensorsProperty(
-                                self,
-                                node_child_id,
-                                {
-                                    '@type': 'OnOffProperty',
-                                    'label': child.description,
-                                    'type': 'boolean',
-                                },
-                                realValue, base_node_id, base_node_child_id, base_node_subchild_id)
-                        
-                        if childSubType == 16: # V_tripped
-                            self._type.append('BinarySensor')
-                            self.properties[node_child_id] = MySensorsProperty(
-                                self,
-                                node_child_id,
-                                {
-                                    'label': child.description,
-                                    'type': 'number',
-                                    #'readOnly': True,
-                                },
-                                realValue, base_node_id, base_node_child_id, base_node_subchild_id)
-                        
-                        
-                    elif child.type == 32:                      # Water leak
-                        self._type.append('LeakSensor') 
-                        self.properties[node_child_id] = MySensorsProperty(
-                            self,
-                            node_child_id,
-                            {
-                                '@type': 'LeakProperty',
-                                'label': child.description,
-                                'type': 'boolean',
-                            },
-                            realValue, base_node_id, base_node_child_id, base_node_subchild_id)
-                        
-                        
-                    elif child.type == 33:                       # Sound
-                        self._type.append('MultiLevelSensor')        
-                        self.properties[node_child_id] = MySensorsProperty(
-                            self,
-                            node_child_id,
-                            {
-                                'label': child.description,
-                                'type': 'number',
-                                #'readOnly': True,
-                            },
-                            realValue, base_node_id, base_node_child_id, base_node_subchild_id)
-
-                    elif child.type == 34:                       # Vibration
-                        self._type.append('MultiLevelSensor')        
-                        self.properties[node_child_id] = MySensorsProperty(
-                            self,
-                            node_child_id,
-                            {
-                                'label': child.description,
-                                'type': 'number',
-                                #'readOnly': True,
-                            },
-                            realValue, base_node_id, base_node_child_id, base_node_subchild_id)
-                        
-                    elif child.type == 35:                       # Moisture
-                        self._type.append('MultiLevelSensor')        
-                        self.properties[node_child_id] = MySensorsProperty(
-                            self,
-                            node_child_id,
-                            {
-                                'label': child.description,
-                                'type': 'number',
-                                #'readOnly': True,
-                            },
-                            realValue, base_node_id, base_node_child_id, base_node_subchild_id)
-                    
-                    elif child.type == 36:
-                        pass #this should never trigger anyway, strings are handled above.
-                        
-                    elif child.type == 37:                      # GPS
-                        pass            
-                    elif child.type == 38:                      # Water quality
-                        pass
+                            new_value, new_node_id, new_child_id, new_sub_type)
                     else:
-                        pass
+                        self.properties[targetPropertyID] = MySensorsProperty(
+                            self,
+                            targetPropertyID,
+                            {
+                                'label': new_description,
+                                'type': 'number',
+                                'readOnly': True,
+                            },
+                            new_value, new_node_id, new_child_id, new_sub_type)
+
+            elif child.type == 23:                      # CUSTOM
+                if new_sub_type == 48: # V_CUSTOM
+                    self._type.append('MultiLevelSensor') 
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            'label': new_description,
+                            'type': 'number',
+                            'readOnly': True,
+                        },
+                        new_value, new_node_id, new_child_id, new_sub_type)
+
+            elif child.type == 24:                      # S_DUST
+                if new_sub_type == 37: # V_LEVEL
+                    self._type.append('MultiLevelSensor') 
+                    if prefix != '':
+                        self.properties[targetPropertyID] = MySensorsProperty(
+                            self,
+                            targetPropertyID,
+                            {
+                                'label': new_description,
+                                'type': 'number',
+                                'unit': prefix,
+                                'readOnly': True,
+                            },
+                            new_value, new_node_id, new_child_id, new_sub_type)
+                    else:
+                        self.properties[targetPropertyID] = MySensorsProperty(
+                            self,
+                            targetPropertyID,
+                            {
+                                'label': new_description,
+                                'type': 'number',
+                                'readOnly': True,
+                            },
+                            new_value, new_node_id, new_child_id, new_sub_type)
+
+            elif child.type == 25:                      # Scene controller
+                self._type.append('OnOffSwitch')
+                self.properties[targetPropertyID] = MySensorsProperty(
+                    self,
+                    targetPropertyID,
+                    {
+                        '@type': 'OnOffProperty',
+                        'label': new_description,
+                        'type': 'boolean',
+                    },
+                    new_value, new_node_id, new_child_id, new_sub_type)
+
+            elif child.type == 26:                      # RGB light
+                #self._type.append(['OnOffSwitch', 'Light', 'ColorControl'])
+                pass #todo
+
+            elif child.type == 27:                      # RGB light with separate white level
+                #self._type.append(['OnOffSwitch', 'Light', 'ColorControl'])
+                pass #todo
+
+            elif child.type == 28:                      # Color sensor
+                self.properties[targetPropertyID] = MySensorsProperty(
+                    self,
+                    targetPropertyID,
+                    {
+                        'label': new_description,
+                        'type': 'string',
+                        'readOnly': True,
+                    },
+                    new_value, new_node_id, new_child_id, new_sub_type)
+
+            elif child.type == 29:                      # Thermostat / HVAC
+                pass
+
+            elif child.type == 30:                      # Volt meter
+                self._type.append('MultiLevelSensor')
+                self.properties[targetPropertyID] = MySensorsProperty(
+                    self,
+                    targetPropertyID,
+                    {
+                        '@type': 'VoltageProperty',
+                        'label': new_description,
+                        'type': 'number',
+                        'unit': 'volt',
+                        'readOnly': True,
+                    },
+                    new_value, new_node_id, new_child_id, new_sub_type)
+
+            elif child.type == 31:                      # Sprinkler
+                if new_sub_type == 2: #V_status
+                    self._type.append('OnOffSwitch')
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            '@type': 'OnOffProperty',
+                            'label': new_description,
+                            'type': 'boolean',
+                        },
+                        new_value, new_node_id, new_child_id, new_sub_type)
+
+                if new_sub_type == 16: # V_tripped
+                    self._type.append('BinarySensor')
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            'label': new_description,
+                            'type': 'number',
+                            'readOnly': True,
+                        },
+                        new_value, new_node_id, new_child_id, new_sub_type)
+
+
+            elif child.type == 32:                      # Water leak
+                self._type.append('LeakSensor') 
+                self.properties[targetPropertyID] = MySensorsProperty(
+                    self,
+                    targetPropertyID,
+                    {
+                        '@type': 'LeakProperty',
+                        'label': new_description,
+                        'type': 'boolean',
+                    },
+                    new_value, new_node_id, new_child_id, new_sub_type)
+
+
+            elif child.type == 33:                       # Sound
+                #self._type.append('MultiLevelSensor')        
+                self.properties[targetPropertyID] = MySensorsProperty(
+                    self,
+                    targetPropertyID,
+                    {
+                        'label': new_description,
+                        'type': 'number',
+                        'readOnly': True,
+                    },
+                    new_value, new_node_id, new_child_id, new_sub_type)
+
+            elif child.type == 34:                       # Vibration
+                #self._type.append('MultiLevelSensor')        
+                self.properties[targetPropertyID] = MySensorsProperty(
+                    self,
+                    targetPropertyID,
+                    {
+                        'label': new_description,
+                        'type': 'number',
+                        'readOnly': True,
+                    },
+                    new_value, new_node_id, new_child_id, new_sub_type)
+
+            elif child.type == 35:                       # Moisture
+                #self._type.append('MultiLevelSensor')        
+                if new_sub_type == 37: # V_LEVEL
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            'label': new_description,
+                            'type': 'number',
+                            'readOnly': True,
+                        },
+                        new_value, new_node_id, new_child_id, new_sub_type)
+                if new_sub_type == 15: # V_ARMED
+                    self._type.append('OnOffSwitch')                       
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            '@type': 'OnOffProperty',
+                            'label': new_description,
+                            'type': 'boolean',
+                        },
+                        new_value, new_node_id, new_child_id, new_sub_type)
+                if new_sub_type == 16: # V_TRIPPED                   
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            '@type': 'OpenProperty',
+                            'label': new_description,
+                            'type': 'boolean',
+                            'readOnly': True,
+                        },
+                        new_value, new_node_id, new_child_id, new_sub_type)
+
+            elif child.type == 36:                      # S_Info
+                if new_sub_type == 47: # V_TEXT
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            'label': new_description,
+                            'type': 'string',
+                        },
+                        new_value, new_node_id, new_child_id, new_sub_type)
+
+                pass #this should never trigger anyway, strings are handled above.
+
+
+            elif child.type == 38:                      # Gas
+                if new_sub_type == 34 or new_sub_type == 35: # V_FLOW & V_VOLUME
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            'label': new_description,
+                            'type': 'number',
+                            'readOnly': True,
+                        },
+                        new_value, new_node_id, new_child_id, new_sub_type)
+
+
+            elif child.type == 38:                      # GPS
+                if new_sub_type == 49: # V_POSITION
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            'label': new_description,
+                            'type': 'string',
+                        },
+                        new_value, new_node_id, new_child_id, new_sub_type)
+
+            elif child.type == 39:                      # Water quality
+                if new_sub_type == 2: # V_STATUS
+                    self._type.append('SmartPlug')           
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            '@type': 'OnOffProperty',
+                            'label': new_description,
+                            'type': 'boolean',
+                        },
+                        new_value, new_node_id, new_child_id, new_sub_type)
+                if new_sub_type == 0: # V_TEMP
+                    self._type.append('MultiLevelSensor')
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            '@type': 'TemperatureProperty',
+                            'label': new_description,
+                            'type': 'number',
+                            'unit': 'degree celsius',
+                            'readOnly': True,
+                        },
+                    new_value, new_node_id, new_child_id, new_sub_type)
+                if new_sub_type == 51 or new_sub_type == 52 or new_sub_type == 53: # V_PH, V_ORP, V_EC
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            'label': new_description,
+                            'type': 'number',
+                            'readOnly': True,
+                        },
+                        new_value, new_node_id, new_child_id, new_sub_type)
+            else:
+                print("- S_TYPE NOT SUPPORTED YET")
+                return
+
+        except Exception as ex:
+            print("Error during calling of create property function from device: " + str(ex))
+
+        print(str(self.properties[targetPropertyID]))    
+            
+        try:
+            #print("new property in properties dict inside device: " + str(self.properties[targetPropertyID]))
+            #print("self.prop.dev: " + str(self.properties[targetPropertyID]))
+            self.notify_property_changed(self.properties[targetPropertyID])
+            self.adapter.handle_device_added(self)
+            print("-All properties: " + str(self.get_property_descriptions()))
+
+        except Exception as ex:
+            print("Handle_device_added after adding property error: " + str(ex))
+    
