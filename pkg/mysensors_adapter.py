@@ -31,8 +31,12 @@ class MySensorsAdapter(Adapter):
         self.pairing = False
         self.name = self.__class__.__name__
         Adapter.__init__(self, 'mysensors-adapter', 'mysensors-adapter', verbose=verbose)
-        print("adapter ID = " + self.get_id())
+        print("Adapter ID = " + self.get_id())
         
+        self.add_from_config()
+        
+        
+    def start_pymysensors_gateway(self, selected_gateway_type, dev_port='/dev/ttyUSB0', ip_address='127.0.0.1'):
         # This is the non-ASynchronous version, which is no longer used:
         #self.GATEWAY = mysensors.AsyncSerialGateway('/dev/ttyUSB0', baud=115200, timeout=1.0, reconnect_timeout=10.0, event_callback=self.event, persistence=False, persistence_file='./mysensors.pickle', protocol_version='2.2')
         ##self.GATEWAY.start_persistence()
@@ -42,21 +46,28 @@ class MySensorsAdapter(Adapter):
         self.LOOP = asyncio.get_event_loop()
         self.LOOP.set_debug(False)
         logging.basicConfig(level=logging.DEBUG)
-
         
         # Establishing a serial gateway:
         try:
-            self.GATEWAY = mysensors.AsyncSerialGateway(
-                '/dev/ttyUSB0', loop=self.LOOP, event_callback=self.event, 
-                #persistence=True, persistence_file='./mysensors.json', 
-                protocol_version='2.2')
-            #self.GATEWAY.start_persistence() # uncomment to enable persistence.
+            if selected_gateway_type == 'USB Serial gateway':
+                self.GATEWAY = mysensors.AsyncSerialGateway(
+                    dev_port, loop=self.LOOP, event_callback=self.analyse_mysensors_message, 
+                    persistence=False, persistence_file='./mysensors.json', 
+                    protocol_version='2.2')
+                #self.GATEWAY.start_persistence() # uncomment to enable persistence.
+            
+            elif selected_gateway_type == 'Ethernet gateway':
+                self.GATEWAY = mysensors.AsyncTCPGateway(ip_address, event_callback=self.analyse_mysensors_message, 
+                    persistence=False, persistence_file='./mysensors.json', 
+                    protocol_version='2.2')
+
+            elif selected_gateway_type == 'MQTT gateway':
+                self.GATEWAY = mysensors.AsyncMQTTGateway(ip_address, event_callback=self.analyse_mysensors_message, 
+                    persistence=False, persistence_file='./mysensors.json', 
+                    protocol_version='2.2')
+            
             self.LOOP.run_until_complete(self.GATEWAY.start())
             self.LOOP.run_forever()
-        except KeyboardInterrupt:
-            print("keyboard interrupt")
-            this.GATEWAY.stop()
-            this.LOOP.close()
         except Exception as exc:  # pylint: disable=broad-except
             print(exc)
 
@@ -67,7 +78,7 @@ class MySensorsAdapter(Adapter):
         this.LOOP.close()
 
 
-    def event(self, message):
+    def analyse_mysensors_message(self, message):
         
         typeName = ''
         if message.type == 0:
@@ -256,7 +267,89 @@ class MySensorsAdapter(Adapter):
             return
 
         self.pairing = True
-    
+
+        # Use this opportunity to manually re-request a presentation from all nodes?
+        #try:
+        #    for index, sensor in self.GATEWAY.sensors: # The values dictionary can contain multiple items. We loop over each one.
+        #        print(str(sensor.sensor_id))
+        #        
+        #    #This is what a re-request presentation message looks like: 10;255;3;0;6;3
+        #        
+        #    request_presentation_message = Message
+        #    
+        #    
+        #        
+        #    self.GATEWAY.send(request_presentation_message)
+        #    
+        #except:
+        #    print("Weird: error while looking for a prefix")
+
+        #I_PRESENTATION = 19
+        #self.GATEWAY.sensors[message.node_id].sensor_id
+        #self.GATEWAY.set_child_value(message.node_id, message.child_id, message.sub_type, requestResult)
+
+    def add_from_config(self):
+        """Attempt to add all configured devices."""
+        database = Database('mysensors-adapter')
+        if not database.open():
+            return
+
+        config = database.load_config()
+        database.close()
+
+        if not config or 'Gateway' not in config:
+            return
+
+        selected_gateway_type = str(config['Gateway'])
+        
+        if config['Gateway'] == 'USB Serial gateway':
+            print("Selected: USB Serial gateway")
+            
+            if 'USB device name' not in config:
+                dev_port = '/dev/ttyUSB0'
+            elif str(config['USB device name']) == '':
+                dev_port = '/dev/ttyUSB0'
+            else:
+                dev_port = str(config['USB device name'])
+            
+            self.start_pymysensors_gateway(selected_gateway_type, dev_port, '')
+        
+        elif config['Gateway'] == 'Ethernet gateway':
+            print("Selected: Ethernet gateway")
+            
+            if 'IP address' not in config:
+                ip_address = '127.0.0.1'
+            elif str(config['IP address']) == '':
+                ip_address = '127.0.0.1'
+            else:
+                ip_address = str(config['IP address'])
+            
+            self.start_pymysensors_gateway(selected_gateway_type, '', ip_address)
+            
+        elif config['Gateway'] == 'MQTT gateway':
+            print("Selected: MQTT gateway")
+            
+            if 'IP address' not in config:
+                ip_address = '127.0.0.1'
+            elif str(config['IP address']) == '':
+                ip_address = '127.0.0.1'
+            else:
+                ip_address = str(config['IP address'])
+            
+            self.start_pymysensors_gateway(selected_gateway_type, '', ip_address)
+            
+        
+        #print(str(config['Ethernet address']))
+        
+        #for address in config['addresses']:
+        #    try:
+        #        dev = Discover.discover_single(address)
+        #    except (OSError, UnboundLocalError) as e:
+        #        print('Failed to connect to {}: {}'.format(address, e))
+        #        continue
+
+        #    if dev:
+        #        self._add_device(dev)
 
         
     def _add_device(self, node):
