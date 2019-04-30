@@ -6,7 +6,7 @@ import time
 import mysensors.mysensors as mysensors
 
 from gateway_addon import Device
-from .mysensors_property import MySensorsProperty #, MySensorsTemperatureProperty
+from .mysensors_property import MySensorsProperty
 from .util import pretty, is_a_number, get_int_or_float
 
 
