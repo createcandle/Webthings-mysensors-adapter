@@ -22,3 +22,6 @@ This is beta code. It currently supports most sensor inputs, as well as most act
 Missing or just partially implemented are:
 - Thermostat/HVAC devices. The Gateway does not support them yet.
 - IR sender/receiver
+
+
+Version 0.0.2 added the ability to select different radio gateways (serial, ethernet, MQTT), and had some improvements to property support.
