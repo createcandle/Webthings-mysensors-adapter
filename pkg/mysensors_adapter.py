@@ -54,17 +54,19 @@ class MySensorsAdapter(Adapter):
                     dev_port, loop=self.LOOP, event_callback=self.analyse_mysensors_message, 
                     persistence=False, persistence_file='./mysensors.json', 
                     protocol_version='2.2')
-                #self.GATEWAY.start_persistence() # uncomment to enable persistence.
+                
             
             elif selected_gateway_type == 'Ethernet gateway':
                 self.GATEWAY = mysensors.AsyncTCPGateway(ip_address, event_callback=self.analyse_mysensors_message, 
-                    persistence=False, persistence_file='./mysensors.json', 
+                    persistence=True, persistence_file='./mysensors.json', 
                     protocol_version='2.2')
 
             elif selected_gateway_type == 'MQTT gateway':
                 self.GATEWAY = mysensors.AsyncMQTTGateway(ip_address, event_callback=self.analyse_mysensors_message, 
-                    persistence=False, persistence_file='./mysensors.json', 
+                    persistence=True, persistence_file='./mysensors.json', 
                     protocol_version='2.2')
+            
+            self.GATEWAY.start_persistence() # comment this line to disable persistence. Persistence means the add-on keeps its own list of mysensors devices.
             
             self.LOOP.run_until_complete(self.GATEWAY.start())
             self.LOOP.run_forever()
@@ -128,6 +130,8 @@ class MySensorsAdapter(Adapter):
                     if message.sub_type == 36:        # S_INFO type
                         alt_sub_type = 47             # V_TEXT
                     
+                    if message.sub_type == 38:        # S_GPS type
+                        alt_sub_type = 49             # V_POSITION
                     
                     # If we detect a modification, then we can try to create the property early.
                     if alt_sub_type != 0:
@@ -236,7 +240,7 @@ class MySensorsAdapter(Adapter):
             #REQUEST
             # This is a message that requests a value from the gateway.
             if message.type == 2: # A request message
-                print(")()()(REQUEST")
+                print("REQUEST")
                 if str(targetDevice) != 'None':
                     print("-Will try to get existing value from Gateway.")
                     try:
@@ -356,7 +360,7 @@ class MySensorsAdapter(Adapter):
         """
         Add the given device, if necessary.
 
-        dev -- the device object from pyMySensors
+        node -- the object from pyMySensors
         """
         print("inside add device function @ adapter")
         try:

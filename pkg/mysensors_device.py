@@ -410,8 +410,8 @@ class MySensorsDevice(Device):
                         {
                             '@type': 'LevelProperty',
                             'label': new_description,
-                            'minimum':10,
-                            'maximum':30,
+                            'minimum':0,
+                            'maximum':150,
                             'type': 'number',
                             'unit': 'degree celsius',
                         },
