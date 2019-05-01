@@ -72,8 +72,12 @@ class MySensorsProperty(Property):
             intSubchildID = int(float(self.subchild_id))
 
             if is_a_number(value):
+                print("-will be sent as int or float")
                 new_value = get_int_or_float(value)
+                #new_value = float( int( new_value * 100) / 100)
+                print("tamed float = " + str(new_value))
             else:
+                print("-will be sent as string")
                 new_value = str(value)
             
             try:
@@ -83,7 +87,7 @@ class MySensorsProperty(Property):
                 self.device.adapter.GATEWAY.set_child_value(intNodeID, intChildID, intSubchildID, new_value) # here we send the data to the MySensors network.
                 #print("-updated values inside PyMySensors: " + str(self.device.adapter.GATEWAY.sensors[intNodeID].children[intChildID].values))
             except Exception as ex:
-                print("send value inside property object failed. Error: " + str(ex))
+                print("set value inside PyMySensors object failed. Error: " + str(ex))
 
         except Exception as ex:
             print("set_value inside property object failed. Error: " + str(ex))

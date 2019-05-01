@@ -27,7 +27,10 @@ def get_int_or_float(v):
     if number_as_float == number_as_int:
         return number_as_int
     else:
-        return number_as_float
+        
+        #tamed_float = float( int(number_as_float * 100) / 100)
+        
+        return float( int( number_as_float * 100) / 100) 
         #return  float('%.2f' % number_as_float).rstrip('0').rstrip('.')
         #return  round(number_as_float,2)
 

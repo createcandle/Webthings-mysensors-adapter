@@ -52,7 +52,7 @@ class MySensorsAdapter(Adapter):
             if selected_gateway_type == 'USB Serial gateway':
                 self.GATEWAY = mysensors.AsyncSerialGateway(
                     dev_port, loop=self.LOOP, event_callback=self.analyse_mysensors_message, 
-                    persistence=False, persistence_file='./mysensors.json', 
+                    persistence=True, persistence_file='./mysensors.json', 
                     protocol_version='2.2')
                 
             
@@ -81,72 +81,76 @@ class MySensorsAdapter(Adapter):
 
 
     def analyse_mysensors_message(self, message):
-        
-        typeName = ''
-        if message.type == 0:
-            typeName = 'presentation'
-        
-        if message.type == 1:
-            typeName = 'set'
-        
-        if message.type == 2:
-            typeName = 'request'
-            
-        if message.type == 3:
-            typeName = 'internal'
-            
-        if message.type == 4:
-            typeName = 'stream'
-            
-        print()
-        print(">> message > " + typeName + " > id: " + str(message.node_id) + "; child: " + str(message.child_id) + "; subtype: " + str(message.sub_type) + "; payload: " + str(message.payload))
+        try:
+            typeName = ''
+            if message.type == 0:
+                typeName = 'presentation'
 
-        if message.node_id != 0 and message.ack == 0: # Ignore the gateway itself. It should not be presented as a device.
-            
-            # first we check if the incoming node_id already has a corresponding device
-            try:
-                targetDevice = self.get_device(str(message.node_id))
-            except Exception as ex:
-                print("Error while checking if node exists as device: " + str(ex))
+            if message.type == 1:
+                typeName = 'set'
+
+            if message.type == 2:
+                typeName = 'request'
+
+            if message.type == 3:
+                typeName = 'internal'
+
+            if message.type == 4:
+                typeName = 'stream'
+
+            print()
+            print(">> message > " + typeName + " > id: " + str(message.node_id) + "; child: " + str(message.child_id) + "; subtype: " + str(message.sub_type) + "; payload: " + str(message.payload))
+
+        except:
+            print("Error while displaying message in console")
+        
+        try:
+            if message.node_id != 0 and message.ack == 0: # Ignore the gateway itself. It should not be presented as a device.
+
+                # first we check if the incoming node_id already has a corresponding device
+                try:
+                    targetDevice = self.get_device("MySensors_" + str(message.node_id))
+                except Exception as ex:
+                    print("Error while checking if node exists as device: " + str(ex))
 
 
-            # PRESENTATION
-            # Some properties can be added early because they have a predictable sub_type. Their S_type (which is available here) can be transformed into a V_type.
-            if message.type == 0: # A presentation message
-                print("PRESENTATION MESSAGE")
-                
-                # TODO: somehow check if there is already a property/value on the gateway. Update: apparently that is not possible.
-                
-                if str(targetDevice) != 'None':
-                    
-                    # The code below allows presentation messages to already create a property, even though the V_Type has not be received yet. It speeds up property creation, but can only be done if an S_ type only has one possible V_ type associated with it. See the MySensors serial api for details.
-                    alt_sub_type = 0
-                    alt_payload = ''
-                    
-                    if message.sub_type == 19:        # S_LOCK type
-                        alt_sub_type = 36             # V_LOCK_STATUS
-                        alt_payload = '0'               # We also modify the payload
-                    
-                    if message.sub_type == 36:        # S_INFO type
-                        alt_sub_type = 47             # V_TEXT
-                    
-                    if message.sub_type == 38:        # S_GPS type
-                        alt_sub_type = 49             # V_POSITION
-                    
-                    # If we detect a modification, then we can try to create the property early.
-                    if alt_sub_type != 0:
+                # PRESENTATION
+                # Some properties can be added early because they have a predictable sub_type. Their S_type (which is available here) can be transformed into a V_type.
+                if message.type == 0: # A presentation message
+                    print("PRESENTATION MESSAGE")
+
+                    # TODO: somehow check if there is already a property/value on the gateway. Update: apparently that is not possible.
+
+                    if str(targetDevice) != 'None':
+
+                        # The code below allows presentation messages to already create a property, even though the V_Type has not be received yet. It speeds up property creation, but can only be done if an S_ type only has one possible V_ type associated with it. See the MySensors serial api for details.
+                        alt_sub_type = 0
+                        alt_payload = ''
+
+                        if message.sub_type == 19:        # S_LOCK type
+                            alt_sub_type = 36             # V_LOCK_STATUS
+                            alt_payload = '0'               # We also modify the payload
+
+                        if message.sub_type == 36:        # S_INFO type
+                            alt_sub_type = 47             # V_TEXT
+
+                        if message.sub_type == 38:        # S_GPS type
+                            alt_sub_type = 49             # V_POSITION
+
+                        # If we detect a modification, then we can try to create the property early.
+                        if alt_sub_type != 0:
+                            try:
+                                targetDevice.add_child(self.GATEWAY.sensors[message.node_id].children[message.child_id], message, alt_sub_type, alt_payload)
+                            except Exception as ex:
+                                print("-Failed to add new device early from presentation:" + str(ex))
+                    else:
+                        print("-Presented device did not exist in the gateway yet.")
                         try:
-                            targetDevice.add_child(self.GATEWAY.sensors[message.node_id].children[message.child_id], message, alt_sub_type, alt_payload)
+                            self._add_device(self.GATEWAY.sensors[message.node_id])
                         except Exception as ex:
-                            print("-Failed to add new device early from presentation:" + str(ex))
-                else:
-                    print("-Presented device did not exist in the gateway yet.")
-                    try:
-                        self._add_device(self.GATEWAY.sensors[message.node_id])
-                    except Exception as ex:
-                        print("-Failed to add new device from presentation message:" + str(ex))
-
-
+                            print("-Failed to add new device from presentation message:" + str(ex))
+                            
+                            
             # INTERNAL
             # If the node is presented on the network and we get a name for it, then we can initiate a device object for it, if need be.
             if message.type == 3 and message.child_id != 255: # An internal message
@@ -189,12 +193,12 @@ class MySensorsAdapter(Adapter):
             if message.type == 1:
 
                 if str(targetDevice) != 'None': # if the device for this node already exists
-                    #print("targetDevice = " + str(targetDevice))
+                    print("targetDevice = " + str(targetDevice))
                     if message.sub_type != 43: # avoid creating a property for V_UNIT_PREFIX
                         try:
                             targetPropertyID = str(message.node_id) + "-" + str(message.child_id) + "-" + str(message.sub_type) # e.g. 2-5-36
                             targetProperty = targetDevice.find_property(targetPropertyID)
-                            #print("targetProperty = " + str(targetProperty))
+                            print("targetProperty = " + str(targetProperty))
 
                             # The property does not exist yet:
                             if str(targetProperty) == 'None': 
@@ -235,28 +239,9 @@ class MySensorsAdapter(Adapter):
                         self._add_device(self.GATEWAY.sensors[message.node_id])
                     except Exception as ex:
                         print("-Failed to add new device:" + str(ex))
-            
-            
-            #REQUEST
-            # This is a message that requests a value from the gateway.
-            if message.type == 2: # A request message
-                print("REQUEST")
-                if str(targetDevice) != 'None':
-                    print("-Will try to get existing value from Gateway.")
-                    try:
-                        targetPropertyID = str(message.node_id) + "-" + str(message.child_id) + "-" + str(message.sub_type) # e.g. 2-5-36
-                        
-                        requestResult = targetDevice.get_property(targetPropertyID)
-                        print("-Request result: " + str(requestResult))
-                        self.GATEWAY.set_child_value(message.node_id, message.child_id, message.sub_type, requestResult)
-                        
-                    except Exception as ex:
-                        print("-Request for property value failed: " + str(ex))
-                else:
-                    print("Got a request for a device/property that did not exist (yet).")
-                    # It would be possible to start the device/property creation proces here too.
+        except Exception as ex:
+            print("-Failed to add new device:" + str(ex))
                     
-
     def start_pairing(self, timeout):
         """
         Start the pairing process. This starts when the user presses the + button on the things page.

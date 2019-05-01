@@ -28,7 +28,7 @@ class MySensorsDevice(Device):
         Device.__init__(self, adapter, _id)
         
         self.adapter = adapter
-        self.id = str(_id)
+        self.id = "MySensors_" + str(_id)
         self._id = str(_id)
         self.name = node.sketch_name
         self.description = node.sketch_name
@@ -209,7 +209,8 @@ class MySensorsDevice(Device):
                             'label': new_description,
                             'minimum': 0,
                             'maximum': 100,
-                            'type': 'number',
+                            'step': 1,
+                            'type': 'integer',
                             'unit': 'percent',
                         },
                         new_value, new_node_id, new_child_id, new_sub_type)
@@ -238,7 +239,8 @@ class MySensorsDevice(Device):
                             'label': new_description,
                             'minimum': 0,
                             'maximum': 100,
-                            'type': 'number',
+                            'step': 1,
+                            'type': 'integer',
                             'unit': 'percent',
                         },
                         new_value, new_node_id, new_child_id, new_sub_type)
