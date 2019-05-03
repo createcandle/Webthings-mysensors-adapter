@@ -66,8 +66,7 @@ class MySensorsAdapter(Adapter):
                     persistence=True, persistence_file='./mysensors.json', 
                     protocol_version='2.2')
             
-            self.GATEWAY.start_persistence() # comment this line to disable persistence. Persistence means the add-on keeps its own list of mysensors devices.
-            
+            self.LOOP.run_until_complete(self.GATEWAY.start_persistence())  # comment this line to disable persistence. Persistence means the add-on keeps its own list of mysensors devices.
             self.LOOP.run_until_complete(self.GATEWAY.start())
             self.LOOP.run_forever()
         except Exception as exc:  # pylint: disable=broad-except
