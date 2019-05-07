@@ -25,3 +25,5 @@ Missing or just partially implemented are:
 
 
 Version 0.0.2 added the ability to select different radio gateways (serial, ethernet, MQTT), and had some improvements to property support.
+
+Version 0.0.3 adds persistence.
