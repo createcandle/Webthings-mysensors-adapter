@@ -33,9 +33,12 @@ class MySensorsAdapter(Adapter):
         Adapter.__init__(self, 'mysensors-adapter', 'mysensors-adapter', verbose=verbose)
         print("Adapter ID = " + self.get_id())
         
+        self.persistence_file_path = './mysensors.json'
+        
         self.add_from_config()
-        
-        
+
+
+
     def start_pymysensors_gateway(self, selected_gateway_type, dev_port='/dev/ttyUSB0', ip_address='127.0.0.1'):
         # This is the non-ASynchronous version, which is no longer used:
         #self.GATEWAY = mysensors.AsyncSerialGateway('/dev/ttyUSB0', baud=115200, timeout=1.0, reconnect_timeout=10.0, event_callback=self.event, persistence=False, persistence_file='./mysensors.pickle', protocol_version='2.2')
@@ -45,32 +48,36 @@ class MySensorsAdapter(Adapter):
         # This is the new asynchronous version of PyMySensors:
         self.LOOP = asyncio.get_event_loop()
         self.LOOP.set_debug(False)
-        logging.basicConfig(level=logging.DEBUG)
+        
+        #logging.basicConfig(level=logging.DEBUG)
+        logging.basicConfig(level=logging.INFO)
         
         # Establishing a serial gateway:
         try:
             if selected_gateway_type == 'USB Serial gateway':
                 self.GATEWAY = mysensors.AsyncSerialGateway(
-                    dev_port, loop=self.LOOP, event_callback=self.analyse_mysensors_message, 
-                    persistence=True, persistence_file='./mysensors.json', 
+                    dev_port, loop=self.LOOP, event_callback=self.mysensors_message, 
+                    persistence=True, persistence_file=self.persistence_file_path, 
                     protocol_version='2.2')
                 
             
             elif selected_gateway_type == 'Ethernet gateway':
-                self.GATEWAY = mysensors.AsyncTCPGateway(ip_address, event_callback=self.analyse_mysensors_message, 
-                    persistence=True, persistence_file='./mysensors.json', 
+                self.GATEWAY = mysensors.AsyncTCPGateway(ip_address, event_callback=self.mysensors_message, 
+                    persistence=True, persistence_file=self.persistence_file_path, 
                     protocol_version='2.2')
 
             elif selected_gateway_type == 'MQTT gateway':
-                self.GATEWAY = mysensors.AsyncMQTTGateway(ip_address, event_callback=self.analyse_mysensors_message, 
-                    persistence=True, persistence_file='./mysensors.json', 
+                self.GATEWAY = mysensors.AsyncMQTTGateway(ip_address, event_callback=self.mysensors_message, 
+                    persistence=True, persistence_file=self.persistence_file_path, 
                     protocol_version='2.2')
             
-            self.LOOP.run_until_complete(self.GATEWAY.start_persistence())  # comment this line to disable persistence. Persistence means the add-on keeps its own list of mysensors devices.
+            self.LOOP.run_until_complete(self.GATEWAY.start_persistence()) # comment this line to disable persistence. Persistence means the add-on keeps its own list of mysensors devices.
+            
             self.LOOP.run_until_complete(self.GATEWAY.start())
             self.LOOP.run_forever()
         except Exception as exc:  # pylint: disable=broad-except
             print(exc)
+
 
 
     def unload(self):
@@ -79,7 +86,8 @@ class MySensorsAdapter(Adapter):
         this.LOOP.close()
 
 
-    def analyse_mysensors_message(self, message):
+
+    def mysensors_message(self, message):
         try:
             typeName = ''
             if message.type == 0:
@@ -97,8 +105,8 @@ class MySensorsAdapter(Adapter):
             if message.type == 4:
                 typeName = 'stream'
 
-            print()
-            print(">> message > " + typeName + " > id: " + str(message.node_id) + "; child: " + str(message.child_id) + "; subtype: " + str(message.sub_type) + "; payload: " + str(message.payload))
+            #print()
+            #print(">> message > " + typeName + " > id: " + str(message.node_id) + "; child: " + str(message.child_id) + "; subtype: " + str(message.sub_type) + "; payload: " + str(message.payload))
 
         except:
             print("Error while displaying message in console")
@@ -197,7 +205,7 @@ class MySensorsAdapter(Adapter):
                         try:
                             targetPropertyID = str(message.node_id) + "-" + str(message.child_id) + "-" + str(message.sub_type) # e.g. 2-5-36
                             targetProperty = targetDevice.find_property(targetPropertyID)
-                            print("targetProperty = " + str(targetProperty))
+                            #print("targetProperty = " + str(targetProperty))
 
                             # The property does not exist yet:
                             if str(targetProperty) == 'None': 
@@ -212,19 +220,19 @@ class MySensorsAdapter(Adapter):
                                 
                             # The property has already been created, so update its value.    
                             else: 
-                                print("-About to update: " + str(targetPropertyID))
+                                #print("-About to update: " + str(targetPropertyID))
                                 try:
                                     if is_a_number(message.payload):
                                         new_value = get_int_or_float(message.payload)
                                     else:
                                         new_value = str(message.payload)
                                     
-                                    print("New update value:" + str(new_value))
+                                    #print("New update value:" + str(new_value))
                                     targetProperty = targetDevice.find_property(targetPropertyID)
                                     #print("Target property object: " + str(targetProperty))
                                     targetProperty.set_cached_value(new_value)
                                     targetDevice.notify_property_changed(targetProperty)
-                                    print("-Adapter has updated the property")
+                                    #print("-Adapter has updated the property")
                                 except Exception as ex:
                                     print("Update property error: " + str(ex))
 
@@ -240,7 +248,9 @@ class MySensorsAdapter(Adapter):
                         print("-Failed to add new device:" + str(ex))
         except Exception as ex:
             print("-Failed to add new device:" + str(ex))
-                    
+
+
+
     def start_pairing(self, timeout):
         """
         Start the pairing process. This starts when the user presses the + button on the things page.
@@ -275,6 +285,8 @@ class MySensorsAdapter(Adapter):
         #I_PRESENTATION = 19
         #self.GATEWAY.sensors[message.node_id].sensor_id
         #self.GATEWAY.set_child_value(message.node_id, message.child_id, message.sub_type, requestResult)
+
+
 
     def add_from_config(self):
         """Attempt to add all configured devices."""
@@ -339,7 +351,8 @@ class MySensorsAdapter(Adapter):
         #    if dev:
         #        self._add_device(dev)
 
-        
+
+
     def _add_device(self, node):
         """
         Add the given device, if necessary.
@@ -361,6 +374,7 @@ class MySensorsAdapter(Adapter):
         self.handle_device_added(device)
         print("-Adapter has finished adding new device")
         return
+
 
 
     def cancel_pairing(self):
