@@ -96,8 +96,8 @@ class MySensorsAdapter(Adapter):
 
     def unload(self):
         print("Shutting down adapter")
-        this.GATEWAY.stop()
-        this.LOOP.close()
+        self.GATEWAY.stop()
+        self.LOOP.close()
 
 
 
