@@ -1,7 +1,7 @@
 {
   "name": "mysensors-adapter",
   "display_name": "MySensors",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "MySensors add-on for Mozilla WebThings Gateway",
   "author": "CreateCandle",
   "main": "bootstrap.py",
@@ -26,6 +26,7 @@
     "SHA256SUMS",
     "bootstrap.py",
     "main.py",
+    "mysensors.json",
     "pkg/__init__.py",
     "pkg/mysensors_adapter.py",
     "pkg/mysensors_device.py",
