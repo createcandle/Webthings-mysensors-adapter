@@ -1,5 +1,6 @@
 """MySensors adapter for Mozilla WebThings Gateway."""
 
+import os
 import time
 import asyncio
 import logging
@@ -13,7 +14,15 @@ from .util import pretty, is_a_number, get_int_or_float
 
 _TIMEOUT = 3
 
+__location__ = os.path.realpath(
+    os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
+_CONFIG_PATHS = [
+    os.path.join(os.path.expanduser('~'), '.mozilla-iot', 'config'),
+]
+
+if 'MOZIOT_HOME' in os.environ:
+    _CONFIG_PATHS.insert(0, os.path.join(os.environ['MOZIOT_HOME'], 'config'))
 
 
 
@@ -31,9 +40,14 @@ class MySensorsAdapter(Adapter):
         self.pairing = False
         self.name = self.__class__.__name__
         Adapter.__init__(self, 'mysensors-adapter', 'mysensors-adapter', verbose=verbose)
-        print("Adapter ID = " + self.get_id())
+        #print("Adapter ID = " + self.get_id())
         
-        self.persistence_file_path = './mysensors.json'
+        for path in _CONFIG_PATHS:
+            if os.path.isdir(path):
+                self.persistence_file_path = os.path.join(
+                    path,
+                    'mysensors-adapter-persistence.json'
+                )
         
         self.add_from_config()
 
@@ -124,7 +138,7 @@ class MySensorsAdapter(Adapter):
                 # PRESENTATION
                 # Some properties can be added early because they have a predictable sub_type. Their S_type (which is available here) can be transformed into a V_type.
                 if message.type == 0: # A presentation message
-                    print("PRESENTATION MESSAGE")
+                    #print("PRESENTATION MESSAGE")
 
                     # TODO: somehow check if there is already a property/value on the gateway. Update: apparently that is not possible.
 
@@ -151,7 +165,7 @@ class MySensorsAdapter(Adapter):
                             except Exception as ex:
                                 print("-Failed to add new device early from presentation:" + str(ex))
                     else:
-                        print("-Presented device did not exist in the gateway yet.")
+                        print("-Presented device did not exist in the gateway yet. Adding now.")
                         try:
                             self._add_device(self.GATEWAY.sensors[message.node_id])
                         except Exception as ex:
@@ -163,7 +177,7 @@ class MySensorsAdapter(Adapter):
             if message.type == 3 and message.child_id != 255: # An internal message
                 if message.sub_type == 11: # holds the name of the new device
                     if str(targetDevice) == 'None':
-                        print("-Internally presented device did not exist in the gateway yet, let's try adding it.")
+                        #print("-Internally presented device did not exist in the gateway yet. Adding now.")
                             
                         try:
                             self._add_device(self.GATEWAY.sensors[message.node_id])
@@ -188,7 +202,7 @@ class MySensorsAdapter(Adapter):
                             except Exception as ex:
                                 print("-Failed to add new device from internal message:" + str(ex))
                 else:
-                    print("-Internally presented device did not exist in the gateway yet.")
+                    #print("-Internally presented device did not exist in the gateway yet.")
                     try:
                         self._add_device(self.GATEWAY.sensors[message.node_id])
                     except Exception as ex:
@@ -200,7 +214,7 @@ class MySensorsAdapter(Adapter):
             if message.type == 1:
 
                 if str(targetDevice) != 'None': # if the device for this node already exists
-                    print("targetDevice = " + str(targetDevice))
+                    #print("targetDevice = " + str(targetDevice))
                     if message.sub_type != 43: # avoid creating a property for V_UNIT_PREFIX
                         try:
                             targetPropertyID = str(message.node_id) + "-" + str(message.child_id) + "-" + str(message.sub_type) # e.g. 2-5-36
@@ -212,9 +226,9 @@ class MySensorsAdapter(Adapter):
                                 #print("property existence check gave None")
                                 try:
                                     child = self.GATEWAY.sensors[message.node_id].children[message.child_id]
-                                    print("-The PyMySensors node existed. Now to add it. " + str(child))
+                                    #print("-The PyMySensors node existed. Now to add it. " + str(child))
                                     targetDevice.add_child(child, message, message.sub_type, message.payload)
-                                    print("-Finished proces of adding new property")
+                                    #print("-Finished proces of adding new property")
                                 except Exception as ex:
                                     print("-Error adding property: " + str(ex))
                                 
@@ -257,8 +271,8 @@ class MySensorsAdapter(Adapter):
 
         timeout -- Timeout in seconds at which to quit pairing
         """
-        print()
-        print("PAIRING INITIATED")
+        #print()
+        #print("PAIRING INITIATED")
         
         if self.pairing:
             print("-Already pairing")
@@ -359,20 +373,20 @@ class MySensorsAdapter(Adapter):
 
         node -- the object from pyMySensors
         """
-        print("inside add device function @ adapter")
+        #print("inside add device function @ adapter")
         try:
             if str(node.sketch_name) == 'None':
-                print("-No sketch name yet, not adding devive.")
+                print("-No sketch name yet. Cancalling adding device.")
                 return
         except Exception as ex:
             print("-Cannot add device: error checking sketch name:" + str(ex))
             return
         
-        print()
+        #print()
         print("+ADDING DEVICE: " + str(node.sketch_name))
         device = MySensorsDevice(self, node.sensor_id, node)
         self.handle_device_added(device)
-        print("-Adapter has finished adding new device")
+        #print("-Adapter has finished adding new device")
         return
 
 

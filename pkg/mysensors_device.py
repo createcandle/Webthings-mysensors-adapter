@@ -39,7 +39,7 @@ class MySensorsDevice(Device):
 
 
     def add_child(self, child, message, sub_type, value):
-        print()
+        #print()
         print("+ DEVICE.ADD_CHILD with child_id: " + str(message.child_id))
         
 
@@ -73,17 +73,17 @@ class MySensorsDevice(Device):
                 new_value = str(value)
 
 
-            print("Child object: " + str(child))
-            print("child.type = " + str(child.type)) # Funnily enough, this S_ type is not really needed.
-            print("child_id = " + str(new_child_id))
-            print("sub_type = " + str(new_sub_type))
-            print("property description = " + str(new_description))
-            print("value = " + str(new_value))
+            #print("Child object: " + str(child))
+            #print("child.type = " + str(child.type)) # Funnily enough, this S_ type is not really needed.
+            #print("child_id = " + str(new_child_id))
+            #print("sub_type = " + str(new_sub_type))
+            #print("property description = " + str(new_description))
+            #print("-value = " + str(new_value))
 
             targetPropertyID = str(new_node_id) + "-" + str(new_child_id) + "-" + str(new_sub_type) # e.g. 2-5-36
 
-            print("child.type: " + str(child.type))
-            print("new_sub_type: " + str(new_sub_type))
+            #print("child.type: " + str(child.type))
+            #print("new_sub_type: " + str(new_sub_type))
 
         except Exception as ex:
             print("Error during preparation to add new property: " + str(ex))
@@ -790,14 +790,14 @@ class MySensorsDevice(Device):
         except Exception as ex:
             print("Error during calling of create property function from device: " + str(ex))
 
-        print(str(self.properties[targetPropertyID]))    
+        #print(str(self.properties[targetPropertyID]))    
             
         try:
             #print("new property in properties dict inside device: " + str(self.properties[targetPropertyID]))
             #print("self.prop.dev: " + str(self.properties[targetPropertyID]))
             self.notify_property_changed(self.properties[targetPropertyID])
             self.adapter.handle_device_added(self)
-            print("-All properties: " + str(self.get_property_descriptions()))
+            #print("-All properties: " + str(self.get_property_descriptions()))
 
         except Exception as ex:
             print("Handle_device_added after adding property error: " + str(ex))
