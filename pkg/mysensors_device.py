@@ -14,24 +14,27 @@ from .util import pretty, is_a_number, get_int_or_float
 class MySensorsDevice(Device):
     """MySensors device type."""
 
-    def __init__(self, adapter, _id, node):
+    def __init__(self, adapter, _id, sketch_name):
         """
         Initialize the object.
 
         adapter -- the Adapter managing this device
         _id -- ID of this device
-        node -- The MySensors Node object to initialize from
+        sketch_name -- The MySensors node name
         index -- index inside parent device
         """
+        
+        #self._id = "MySensors_" + str(_id)
+        self._id = 'MySensors-{}'.format(_id)
         
         #print("Device init: " + str(node.sketch_name))
         Device.__init__(self, adapter, _id)
         
         self.adapter = adapter
         self.id = "MySensors_" + str(_id)
-        self._id = str(_id)
-        self.name = node.sketch_name
-        self.description = node.sketch_name
+        #self._id = str(_id)
+        self.name = sketch_name
+        self.description = sketch_name
         self._type = []
         self.properties = {}
         #print("device self.properties at init: " + str(self.properties))
@@ -790,15 +793,19 @@ class MySensorsDevice(Device):
         except Exception as ex:
             print("Error during calling of create property function from device: " + str(ex))
 
-        #print(str(self.properties[targetPropertyID]))    
-            
+        print("targetPropertyID = " + str(targetPropertyID))   
         try:
-            #print("new property in properties dict inside device: " + str(self.properties[targetPropertyID]))
+            print(str(self.properties[targetPropertyID])) 
+            print("new property in properties dict inside device: " + str(self.properties[targetPropertyID]))
             #print("self.prop.dev: " + str(self.properties[targetPropertyID]))
             self.notify_property_changed(self.properties[targetPropertyID])
+            #print("-All properties: " + str(self.get_property_descriptions()))
+        except Exception as ex:
+            print("notify after adding property error: " + str(ex))
+        
+        try:
             self.adapter.handle_device_added(self)
             #print("-All properties: " + str(self.get_property_descriptions()))
-
         except Exception as ex:
             print("Handle_device_added after adding property error: " + str(ex))
     

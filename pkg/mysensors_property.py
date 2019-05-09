@@ -56,7 +56,7 @@ class MySensorsProperty(Property):
         value -- the value to set
         """
         
-        #print("property -> set_value")
+        print("property -> set_value")
         #print("->name " + str(self.name))
         #print("->devi " + str(self.device))
         #print("->node_id " + str(self.node_id))
@@ -75,9 +75,15 @@ class MySensorsProperty(Property):
                 #print("-will be sent as int or float")
                 new_value = get_int_or_float(value)
                 #new_value = float( int( new_value * 100) / 100)
-                #print("tamed float = " + str(new_value))
+                print("tamed float = " + str(new_value))
+                
+                #if new_value == 0:
+                #    new_value = False
+                #if new_value == 1:
+                #    new_value = True                
+                
             else:
-                #print("-will be sent as string")
+                print("-will be sent as string")
                 new_value = str(value)
             
             try:
