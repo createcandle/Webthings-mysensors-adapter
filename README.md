@@ -27,3 +27,5 @@ Missing or just partially implemented are:
 Version 0.0.2 added the ability to select different radio gateways (serial, ethernet, MQTT), and had some improvements to property support.
 
 Version 0.0.3 adds persistence.
+
+Version 0.0.4 makes persistance selectable, and adds the ability to send a discover command to all nodes so that they re-present themselves. This is done at start and when the user clicks on the (+) button. It also improves the temperature property's presentation.
