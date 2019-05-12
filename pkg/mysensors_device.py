@@ -793,10 +793,10 @@ class MySensorsDevice(Device):
         except Exception as ex:
             print("Error during calling of create property function from device: " + str(ex))
 
-        print("targetPropertyID = " + str(targetPropertyID))   
+        #print("targetPropertyID = " + str(targetPropertyID))   
         try:
-            print(str(self.properties[targetPropertyID])) 
-            print("new property in properties dict inside device: " + str(self.properties[targetPropertyID]))
+            #print(str(self.properties[targetPropertyID])) 
+            #print("new property in properties dict inside device: " + str(self.properties[targetPropertyID]))
             #print("self.prop.dev: " + str(self.properties[targetPropertyID]))
             self.notify_property_changed(self.properties[targetPropertyID])
             #print("-All properties: " + str(self.get_property_descriptions()))

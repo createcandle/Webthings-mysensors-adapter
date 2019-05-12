@@ -67,8 +67,8 @@ class MySensorsAdapter(Adapter):
         self.LOOP = asyncio.get_event_loop()
         self.LOOP.set_debug(False)
         
-        logging.basicConfig(level=logging.DEBUG)
-        #logging.basicConfig(level=logging.INFO)
+        #logging.basicConfig(level=logging.DEBUG)
+        logging.basicConfig(level=logging.INFO)
         
         # Establishing a serial gateway:
         try:
@@ -127,7 +127,7 @@ class MySensorsAdapter(Adapter):
                 typeName = 'stream'
 
             #print()
-            print(">> message > " + typeName + " > id: " + str(message.node_id) + "; child: " + str(message.child_id) + "; subtype: " + str(message.sub_type) + "; payload: " + str(message.payload))
+            #print(">> message > " + typeName + " > id: " + str(message.node_id) + "; child: " + str(message.child_id) + "; subtype: " + str(message.sub_type) + "; payload: " + str(message.payload))
 
         except:
             print("Error while displaying message in console")
@@ -282,7 +282,7 @@ class MySensorsAdapter(Adapter):
             print("-Failed to add new device:" + str(ex))
 
     def rerequest(self):
-        print("----RE-REQUESTING----")
+        #print("----RE-REQUESTING----")
         #self.GATEWAY.send('0;255;3;0;26;0\n') # This message will ask devices to respond with their node ID. But we alreayd have those from the persistane file.
         try:
             if not self.persist:
@@ -292,7 +292,7 @@ class MySensorsAdapter(Adapter):
             # this asks all known devices to re-present themselves. IN a future version this request could only be made to nodes where a device property count is lower than expected.
             for index in self.GATEWAY.sensors: #, sensor
                 if index != 0:
-                    print("----requesting presentation from " + str(index))
+                    #print("----requesting presentation from " + str(index))
                     discover_encoded_message = str(index) + ';255;3;0;19;\n'
                     self.GATEWAY.send(discover_encoded_message)
                     time.sleep(5)
