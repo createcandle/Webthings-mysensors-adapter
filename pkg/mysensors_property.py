@@ -32,15 +32,15 @@ class MySensorsProperty(Property):
             self.child_id = child_id
             self.subchild_id = subchild_id
 
-            #self.device = device
-            #self.name = name
-            #self.description = description
-            #self.value = value
+            self.device = device
+            self.name = name
+            self.description = description
+            self.value = value
 
             #self.set_cached_value(value)
             #self.value = value #hmm, test
             #self.device = device
-            #print("property value = " + str(self.value))
+            print("property value = " + str(self.value))
             #print("self.device inside property = " + str(self.device))
             self.device.notify_property_changed(self)
             #print("property init done")

@@ -251,7 +251,7 @@ class MySensorsDevice(Device):
 
             elif child.type == 6:                       # Temperature
                 if new_sub_type == 0: # V_TEMP
-                    self._type.append('MultiLevelSensor')
+                    self._type.append('TemperatureSensor')
                     self.properties[targetPropertyID] = MySensorsProperty(
                         self,
                         targetPropertyID,
@@ -259,7 +259,7 @@ class MySensorsDevice(Device):
                             '@type': 'TemperatureProperty',
                             'label': new_description,
                             'type': 'number',
-                            'unit': 'degree celsius',
+                            'unit': 'degree celsius', # optional for the future:   unit: units === 'imperial' ? 'degree fahrenheit' : 'degree celsius',
                             'readOnly': True,
                         },
                     new_value, new_node_id, new_child_id, new_sub_type)

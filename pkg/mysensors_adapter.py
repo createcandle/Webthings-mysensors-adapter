@@ -4,10 +4,10 @@ import os
 import time
 import asyncio
 import logging
+import threading
+
 import mysensors.mysensors as mysensors
 
-
-from threading import Timer
 from gateway_addon import Adapter, Database
 from .mysensors_device import MySensorsDevice
 from .util import pretty, is_a_number, get_int_or_float
@@ -36,12 +36,11 @@ class MySensorsAdapter(Adapter):
         verbose -- whether or not to enable verbose logging
         """
         print("initialising adapter from class")
-        self.adding_via_timer = False
         self.pairing = False
         self.name = self.__class__.__name__
         Adapter.__init__(self, 'mysensors-adapter', 'mysensors-adapter', verbose=verbose)
         #print("Adapter ID = " + self.get_id())
-        
+
         for path in _CONFIG_PATHS:
             if os.path.isdir(path):
                 self.persistence_file_path = os.path.join(
@@ -53,6 +52,8 @@ class MySensorsAdapter(Adapter):
         self.persist = False
         #self.persistence_file_path = './mysensors-adapter-persistence.json'
         self.add_from_config()
+        
+
         
         
         
@@ -94,18 +95,7 @@ class MySensorsAdapter(Adapter):
             self.LOOP.run_until_complete(self.GATEWAY.start())
             self.LOOP.run_forever()
         except Exception as exc:  # pylint: disable=broad-except
-            print(exc)
-            
-            
-            
-            #force_request = Message(gateway=self).modify( 
-            #    node_id=sensorid, child_id=SYSTEM_CHILD_ID, 
-            #    type=self.const.MessageType.internal, 
-            #    sub_type=self.const.Internal.I_PRESENTATION)
-            
-            #self.GATEWAY.add_job(force_request.encode)
-            
-            
+            print(exc)    
 
 
 
@@ -146,22 +136,10 @@ class MySensorsAdapter(Adapter):
             if message.node_id == 0: # and message.ack == 0: # Ignore the gateway itself. It should not be presented as a device.
                 if message.sub_type == 18 and self.first_request_done == False:
                     self.first_request_done = True
-                    #print("----RE-REQUESTING----")
-                    #self.GATEWAY.send('0;255;3;0;26;0\n')
-                    try:
-                        #print(str(self.GATEWAY.sensors))
-                        for index in self.GATEWAY.sensors: #, sensor
-                            if index != 0:
-                                print("----requesting presentation from " + str(index))
-                                discover_encoded_message = str(index) + ';255;3;0;19;\n'
-                                #print("sennnnnnding:" + discover_encoded_message)
-                                self.GATEWAY.send(discover_encoded_message)
-                                time.sleep(1)
-
-                    #INFO:mysensors:Requesting new presentation for node 11
-                    #DEBUG:mysensors:Sending 11;255;3;0;19;
-                    except:
-                        print("error while manually re-requesting presentations")
+                    #self.rerequest()
+                    self.t = threading.Thread(target=self.rerequest)
+                    self.t.daemon = True
+                    self.t.start()
                     
                 
             else:
@@ -303,6 +281,25 @@ class MySensorsAdapter(Adapter):
         except Exception as ex:
             print("-Failed to add new device:" + str(ex))
 
+    def rerequest(self):
+        print("----RE-REQUESTING----")
+        #self.GATEWAY.send('0;255;3;0;26;0\n') # This message will ask devices to respond with their node ID. But we alreayd have those from the persistane file.
+        try:
+            if not self.persist:
+                self.GATEWAY.send('0;255;3;0;26;0\n')
+                time.sleep(2)
+                
+            # this asks all known devices to re-present themselves. IN a future version this request could only be made to nodes where a device property count is lower than expected.
+            for index in self.GATEWAY.sensors: #, sensor
+                if index != 0:
+                    print("----requesting presentation from " + str(index))
+                    discover_encoded_message = str(index) + ';255;3;0;19;\n'
+                    self.GATEWAY.send(discover_encoded_message)
+                    time.sleep(5)
+                    
+        except:
+            print("error while manually re-requesting presentations")
+            
 
 
     def start_pairing(self, timeout):
@@ -312,7 +309,7 @@ class MySensorsAdapter(Adapter):
         timeout -- Timeout in seconds at which to quit pairing
         """
         #print()
-        #print("PAIRING INITIATED")
+        print("PAIRING INITIATED")
         
         if self.pairing:
             print("-Already pairing")
@@ -320,26 +317,13 @@ class MySensorsAdapter(Adapter):
 
         self.pairing = True
 
-        # Use this opportunity to manually re-request a presentation from all nodes?
-        #try:
-        #    for index, sensor in self.GATEWAY.sensors: # The values dictionary can contain multiple items. We loop over each one.
-        #        print(str(sensor.sensor_id))
-        #        
-        #    #This is what a re-request presentation message looks like: 10;255;3;0;6;3
-        #        
-        #    request_presentation_message = Message
-        #    
-        #    
-        #        
-        #    self.GATEWAY.send(request_presentation_message)
-        #    
-        #except:
-        #    print("Weird: error while looking for a prefix")
-
-        #I_PRESENTATION = 19
-        #self.GATEWAY.sensors[message.node_id].sensor_id
-        #self.GATEWAY.set_child_value(message.node_id, message.child_id, message.sub_type, requestResult)
-
+        if not self.t.is_alive():
+            print("THREAD - not self.t.is_alive")
+            self.t = threading.Thread(target=self.rerequest)
+            self.t.daemon = True
+            self.t.start()
+        else:
+            print("ALREADY REQUESTING PRESENTATIONS FROM NODES")
 
 
     def add_from_config(self):
