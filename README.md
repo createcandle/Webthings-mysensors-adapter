@@ -26,6 +26,10 @@ Missing or just partially implemented are:
 
 Version 0.0.2 added the ability to select different radio gateways (serial, ethernet, MQTT), and had some improvements to property support.
 
-Version 0.0.3 adds persistence.
+Version 0.0.3 adds persistence, in the sense that handed out node ID's are remembered.
 
 Version 0.0.4 makes persistance selectable, and adds the ability to send a discover command to all nodes so that they re-present themselves. This is done at start and when the user clicks on the (+) button. It also improves the temperature property's presentation.
+
+Version 0.0.5 improves type support, implements smarter device removal, makes persistance work as you'd expect (recreates nodes as soon the gateway is restarted), and better implements capabilities support from the Mozilla IoT schema.
+
+
