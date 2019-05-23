@@ -18,12 +18,14 @@ class MySensorsProperty(Property):
         value -- current value of this property
         """
         #print()
-        #print("initialising property")
+        
         #print("-device " + str(device))
         #print("-name: " + str(name))
         #print("-description: " + str(description))
         #print("-value: " + str(value))
         try:
+            if device.adapter.DEBUG:
+                print("Property: initialising")
             Property.__init__(self, device, name, description)
             self.set_cached_value(value)
 
@@ -40,7 +42,8 @@ class MySensorsProperty(Property):
             #self.set_cached_value(value)
             #self.value = value #hmm, test
             #self.device = device
-            print("property value = " + str(self.value))
+            if device.adapter.DEBUG:
+                print("property value = " + str(self.value))
             #print("self.device inside property = " + str(self.device))
             self.device.notify_property_changed(self)
             #print("property init done")
@@ -56,7 +59,8 @@ class MySensorsProperty(Property):
         value -- the value to set
         """
         
-        print("property -> set_value")
+        #if device.adapter.DEBUG:
+        print("<< Sending update to MySensors network")
         #print("->name " + str(self.name))
         #print("->devi " + str(self.device))
         #print("->node_id " + str(self.node_id))
@@ -65,7 +69,8 @@ class MySensorsProperty(Property):
         
 
         try:
-            print("< User initiated message to MySenssors network: " + str(value))
+            if self.device.adapter.DEBUG:
+                print("<< User initiated message to MySensors network: " + str(value))
             # To set sensor 1, child 1, sub-type V_LIGHT (= 2), with value 1.
             intNodeID = int(float(self.node_id))
             intChildID = int(float(self.child_id))
@@ -75,7 +80,8 @@ class MySensorsProperty(Property):
                 #print("-will be sent as int or float")
                 new_value = get_int_or_float(value)
                 #new_value = float( int( new_value * 100) / 100)
-                print("tamed float = " + str(new_value))
+                if self.device.adapter.DEBUG:
+                    print("tamed float = " + str(new_value))
                 
                 #if new_value == 0:
                 #    new_value = False
@@ -83,7 +89,8 @@ class MySensorsProperty(Property):
                 #    new_value = True                
                 
             else:
-                print("-will be sent as string")
+                if self.device.adapter.DEBUG:
+                    print("-will be sent as string")
                 new_value = str(value)
             
             try:
