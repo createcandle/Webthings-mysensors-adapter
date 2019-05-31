@@ -45,13 +45,15 @@
       "Gateway": "USB Serial gateway",
       "USB device name": "/dev/ttyUSB0",
       "IP address": "127.0.0.1",
-      "Persistence": false
+      "Persistence": false,
+      "Debugging": false
     },
     "schema": {
       "type": "object",
       "required": [
         "Gateway",
-        "Persistence"
+        "Persistence",
+        "Debugging"
       ],
       "properties": {
         "Gateway": {
@@ -73,7 +75,11 @@
         },
         "Persistence": {
           "type": "boolean",
-          "description": "Enabling persistence can help avoid issues with duplicate node ID's."
+          "description": "Enabling persistence will recreate your things immediately after a reboot of the WebThings Gateway, whether they are actually connected or not."
+        },
+        "Debugging": {
+          "type": "boolean",
+          "description": "For developers and testers. Enable this to get extra debug data in the system log."
         }
       }
     }
