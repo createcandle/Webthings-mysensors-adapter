@@ -49,10 +49,9 @@ class MySensorsAdapter(Adapter):
                 )
         
         self.DEBUG = False
-        
-        self.first_request_done = False
         self.persist = False
-        #self.persistence_file_path = './mysensors-adapter-persistence.json'
+        self.first_request_done = False
+
         self.add_from_config()
         
         
@@ -147,7 +146,7 @@ class MySensorsAdapter(Adapter):
             self.GATEWAY.stop()
             self.LOOP.close()
         except:
-            print("MySensors adapter was unable to cleanly close PyMySensors")
+            print("MySensors adapter was unable to cleanly close PyMySensors. This is not a problem.")
 
 
     def remove_thing(self, device_id):
@@ -189,7 +188,7 @@ class MySensorsAdapter(Adapter):
                 typeName = 'stream'
 
             if self.DEBUG:
-                print(">> message > " + typeName + " > id: " + str(message.node_id) + "; child: " + str(message.child_id) + "; subtype: " + str(message.sub_type) + "; payload: " + str(message.payload))
+                print(">> incoming message > " + typeName + " > id: " + str(message.node_id) + "; child: " + str(message.child_id) + "; subtype: " + str(message.sub_type) + "; payload: " + str(message.payload))
 
         except:
             print("Error while displaying message in console")
@@ -220,7 +219,8 @@ class MySensorsAdapter(Adapter):
                 if message.type == 3: #and message.child_id != 255: # An internal message
                     if message.sub_type == 11: # holds the sketch name, which will be the name of the new device
                         if str(targetDevice) == 'None':
-                            #print("-Internally presented device did not exist in the gateway yet. Adding now.")
+                            if self.DEBUG:
+                                print("-Internally presented device did not exist in the gateway yet. Adding now.")
 
                             try:
                                 device = MySensorsDevice(self, message.node_id, str(message.payload))
@@ -257,7 +257,8 @@ class MySensorsAdapter(Adapter):
                                             print("-Error adding property: " + str(ex))
                                         #if self.persist:
                                         del self.GATEWAY.sensors[message.node_id].children[message.child_id] # Maybe delete the entire node? Start fresh?
-                                        print("Removed faulty child from gateway object")
+                                        if self.DEBUG:
+                                            print("Removed faulty node child from persistence data")
                                         
 
                                 # The property has already been created, so update its value.    
@@ -369,16 +370,15 @@ class MySensorsAdapter(Adapter):
         config = database.load_config()
         database.close()
 
-        if not config or 'Gateway' not in config:
-            return
-
-        if 'Persistence' not in config:
+        if not config or 'Gateway' not in config or 'Persistence' not in config or 'Debugging' not in config:
             return
         
+        # Fill the variables
         self.persist = config['Persistence']
-        
+        self.DEBUG = config['Debugging']
         selected_gateway_type = str(config['Gateway'])
         
+        # Select the desired PyMySensors type
         if config['Gateway'] == 'USB Serial gateway':
             print("Selected: USB Serial gateway")
             
