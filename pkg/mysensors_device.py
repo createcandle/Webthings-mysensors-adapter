@@ -38,8 +38,7 @@ class MySensorsDevice(Device):
         self._type = []
         self.properties = {}
         #print("device self.properties at init: " + str(self.properties))
-        self.connected_notify(True)
-
+        self.connected = False # Will be set to true once we receive an actual message from the node.
 
     def add_child(self, child, node_id, child_id, sub_type, value):
         #print()
@@ -54,11 +53,11 @@ class MySensorsDevice(Device):
             
             if not child.description:
                 print("-Child had no description")
-                new_description = 'Property type ' + str(new_tub_type)
+                new_description = 'Property type ' + str(sub_type)
             else:
                 new_description = child.description
 
-            decription_addendum = ''
+            decription_addendum = '' # If a child has multiple values (yes this is possible..) we should give them all a different name.
             value_counter = 0
             for childSubType in child.values: # The values dictionary can contain multiple items. We loop over each one.
                 if childSubType == 43: # If this is a prefix, then don't turn it into a property.
@@ -1032,10 +1031,10 @@ class MySensorsDevice(Device):
  
         try:
             if targetPropertyID in self.properties:
-                self.notify_property_changed(self.properties[targetPropertyID])
+                #self.notify_property_changed(self.properties[targetPropertyID])
                 #print("-All properties: " + str(self.get_property_descriptions()))
                 try:
-                    self.adapter.handle_device_added(self)
+                    #self.adapter.handle_device_added(self)
                     if self.adapter.DEBUG:
                         print("---property now exists")
                 except Exception as ex:

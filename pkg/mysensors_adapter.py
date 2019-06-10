@@ -49,49 +49,68 @@ class MySensorsAdapter(Adapter):
                 )
         
         self.DEBUG = False
-        self.persist = False
+        self.show_connection_status = True
         self.first_request_done = False
 
-        self.add_from_config()
-        
-        
+        try:
+            self.add_from_config()
+        except Exception as ex:
+            print("Error loading config (and initialising PyMySensors library?): " + str(ex))
+
+
     def recreate_from_persistence(self):
-        if self.persist:
-            print("RECREATING DEVICES FROM PERSISTENCE")
-            for nodeIndex in self.GATEWAY.sensors:
-                if nodeIndex != 0:
+        print("RECREATING DEVICES FROM PERSISTENCE")
+        for nodeIndex in self.GATEWAY.sensors:
+            if nodeIndex != 0:
+                try:
+                    #print("Adding from persistence file = " + str(nodeIndex))
+                    #newNodeObject = self.GATEWAY.sensors[message.node_id]
+                    #print("new Node object = " + str(self.GATEWAY.sensors[nodeIndex]))
+                    #print("new Node object sensor ID = " + str(self.GATEWAY.sensors[nodeIndex].sensor_id))
+
+                    # Come up with a name for the device
+                    if str(self.GATEWAY.sensors[nodeIndex].sketch_name) == 'None':
+                        name = 'MySensors_' + str(nodeIndex)
+                        #name = 'MySensors_{}'.format(nodeIndex)
+                        if self.DEBUG:
+                            print("-Node was in persistence, but no sketch name was found.")
+                    else:
+                        name = str(self.GATEWAY.sensors[nodeIndex].sketch_name)
+                    if self.DEBUG:
+                        print("")
+                    print("-Recreating: " + name)
+
+                    # We create the device object
+                    device = MySensorsDevice(self, nodeIndex, name)
+
+                    # We add all the children to it as properties
+                    if self.GATEWAY.sensors[nodeIndex].children:
+                        for childIndex in self.GATEWAY.sensors[nodeIndex].children:
+                            child = self.GATEWAY.sensors[nodeIndex].children[childIndex]
+
+                            if child.values:
+                                for valueIndex in child.values:
+                                    if valueIndex != 43: #Avoid V_UNIT_PREFIX
+                                        device.add_child(child, nodeIndex, childIndex, valueIndex, child.values[valueIndex])
+
+                    # Finally, now that the device is complete, we present it to the Gateway.
+                    self.handle_device_added(device)
+                        
+                except Exception as ex:
+                    print("Error during recreation from persistence: " + str(ex))
+
+                # Optionally, set the initial connection status to 'not connected'.
+                
+                if self.show_connection_status:
                     try:
-                        #print("Adding from persistence file = " + str(nodeIndex))
-                        #newNodeObject = self.GATEWAY.sensors[message.node_id]
-                        #print("new Node object = " + str(self.GATEWAY.sensors[nodeIndex]))
-                        #print("new Node object sensor ID = " + str(self.GATEWAY.sensors[nodeIndex].sensor_id))
-
-
-                        if str(self.GATEWAY.sensors[nodeIndex].sketch_name) == 'None':
-                            name = 'MySensors_' + str(nodeIndex)
-                            #name = 'MySensors_{}'.format(nodeIndex)
-                            if self.DEBUG:
-                                print("-Node was in persistence, but no sketch name was found.")
-                        else:
-                            name = str(self.GATEWAY.sensors[nodeIndex].sketch_name)
-
-                        print("-Recreating: " + name)
-                        device = MySensorsDevice(self, nodeIndex, name)
-                        self.handle_device_added(device)
-
-                        #print(str(self.GATEWAY.sensors[nodeIndex]))
-                        if self.GATEWAY.sensors[nodeIndex].children:
-                            for childIndex in self.GATEWAY.sensors[nodeIndex].children:
-                                child = self.GATEWAY.sensors[nodeIndex].children[childIndex]
-
-                                if child.values:
-                                    for valueIndex in child.values:
-                                        if valueIndex != 43: #Avoid V_UNIT_PREFIX
-                                            device.add_child(child, nodeIndex, childIndex, valueIndex, child.values[valueIndex])
-
+                        # Create a handle to the new device, and use its notify function.
+                        targetDevice = self.get_device("MySensors_" + str(nodeIndex))
+                        targetDevice.connected_notify(False)
+                        if self.DEBUG:
+                            print("-Set intial device status to not connected.")
                     except Exception as ex:
-                        print("Error during recreation from persistence file: " + str(ex))
-
+                        print("Failed to set initial connection status to false: " + str(ex))
+   
 
         
         
@@ -111,7 +130,7 @@ class MySensorsAdapter(Adapter):
         else:
             logging.basicConfig(level=logging.INFO)
         
-        # Establishing a serial gateway:
+        # Establishing a MySensors gateway:
         try:
             if selected_gateway_type == 'USB Serial gateway':
                 self.GATEWAY = mysensors.AsyncSerialGateway(
@@ -130,9 +149,7 @@ class MySensorsAdapter(Adapter):
                     persistence=True, persistence_file=self.persistence_file_path, 
                     protocol_version='2.2')
             
-            #if self.persist:
-            self.LOOP.run_until_complete(self.GATEWAY.start_persistence()) # comment this line to disable persistence. Persistence means the add-on keeps its own list of mysensors devices.
-            
+            self.LOOP.run_until_complete(self.GATEWAY.start_persistence())
             self.LOOP.run_until_complete(self.GATEWAY.start())
             self.LOOP.run_forever()
         except Exception as ex:  # pylint: disable=broad-except
@@ -164,52 +181,40 @@ class MySensorsAdapter(Adapter):
             self.handle_device_removed(obj)
             print("Removed MySensors_" + str(ID_to_clear))
         except:
-            print("REMOVING MYSENSORS THING FAILED")
-
-        
+            print("REMOVING MYSENSORS THING FAILED") 
 
 
     def mysensors_message(self, message):
+        
+        
+
+        # Show some human readable details about the incoming message
         try:
-            typeName = ''
-            if message.type == 0:
-                typeName = 'presentation'
-
-            if message.type == 1:
-                typeName = 'set'
-
-            if message.type == 2:
-                typeName = 'request'
-
-            if message.type == 3:
-                typeName = 'internal'
-
-            if message.type == 4:
-                typeName = 'stream'
-
             if self.DEBUG:
-                print(">> incoming message > " + typeName + " > id: " + str(message.node_id) + "; child: " + str(message.child_id) + "; subtype: " + str(message.sub_type) + "; payload: " + str(message.payload))
-
+                type_names = ['presentation','set','request','internal','stream']
+                print(">> incoming message > " + str(type_names[message.type]) + " > id: " + str(message.node_id) + "; child: " + str(message.child_id) + "; subtype: " + str(message.sub_type) + "; payload: " + str(message.payload))
         except:
             print("Error while displaying message in console")
         
+        
         try:
+            # If the messages is coming from the Arduino that acts as the MySensors gateway radio:
             if message.node_id == 0: # and message.ack == 0: # Ignore the gateway itself. It should not be presented as a device.
                 if message.sub_type == 18 and self.first_request_done == False:
                     
-                    if self.persist:
-                        self.recreate_from_persistence() # Recreate everything from the persistence file.
+                    self.recreate_from_persistence() # Recreate everything from the persistence file.
                     
                     self.first_request_done = True
                     self.t = threading.Thread(target=self.rerequest)
                     self.t.daemon = True
                     self.t.start()
                     
-                
+            
+            # If the messages is coming from a device in the MySensors network:
             else:
-                # first we check if the incoming node_id already has a corresponding device
+                # first we check if the incoming node_id already has already been presented to the WebThings Gateway.
                 try:
-                    targetDevice = self.get_device("MySensors_" + str(message.node_id))
+                    targetDevice = self.get_device("MySensors_" + str(message.node_id)) # targetDevice will be 'None' if it wasn't found.
                 except Exception as ex:
                     print("Error while checking if node exists as device: " + str(ex))
                     
@@ -217,24 +222,59 @@ class MySensorsAdapter(Adapter):
                 # INTERNAL
                 # If the node is presented on the network and we get a name for it, then we can initiate a device object for it, if need be.
                 if message.type == 3: #and message.child_id != 255: # An internal message
-                    if message.sub_type == 11: # holds the sketch name, which will be the name of the new device
-                        if str(targetDevice) == 'None':
+                    if str(targetDevice) == 'None':
+                        if message.sub_type == 11: # holds the sketch name, which will be the name of the new device
                             if self.DEBUG:
                                 print("-Internally presented device did not exist in the gateway yet. Adding now.")
 
                             try:
                                 device = MySensorsDevice(self, message.node_id, str(message.payload))
-                                self.handle_device_added(device)
+                                if self.DEBUG:
+                                    self.handle_device_added(device) # This could be removed. Ideally it would only be called after at least one child pas presented itself. On the other hand, it could be useful to show that a device did respond, even if the children couldn't be properly processed.
 
                             except Exception as ex:
                                 print("-Failed to add new device from internal presentation: " + str(ex))
+                    else:
+                        if targetDevice.connected == False:
+                            targetDevice.connected = True
+                            targetDevice.connected_notify(True)
 
 
                 #SET
                 # The message is a 'set' message. This should update a property value or, if the property doesn't exist yet, create it.
                 elif message.type == 1:
 
-                    if str(targetDevice) != 'None': # if the device for this node already exists
+                    # If there is a 'set' message but the device for this node somehow doesn't exist yet, then we should quickly create it.
+                    if str(targetDevice) == 'None':
+                        if self.DEBUG:
+                            print("Incoming 'set' message, but device doesn't exist (yet). If possible, will try to quickly create the device using persistence data.") # Perhaps the persistence data can help. Not sure if this situtation is even possible now that persistence is always used.
+                        if message.node_id in self.GATEWAY.sensors:
+                            try:
+                                if str(self.GATEWAY.sensors[message.node_id].sketch_name) == 'None':
+                                    name = 'MySensors_' + str(message.node_id)
+                                    if self.DEBUG:
+                                        print("-Node was in persistence, but no sketch name found. Generated a generic name.")
+                                else:
+                                    name = str(self.GATEWAY.sensors[message.node_id].sketch_name)
+
+                                print("-Name for the new device is: " + name)
+                                device = MySensorsDevice(self, message.node_id, name)
+                                self.handle_device_added(device)
+                                
+                                # Now try to get that device handle again.
+                                try:
+                                    targetDevice = self.get_device("MySensors_" + str(message.node_id)) # targetDevice will be 'None' if it wasn't found.
+                                except Exception as ex:
+                                    print("Error while checking if node exists as device AGAIN: " + str(ex))
+                    
+                            except Exception as ex:
+                                print("-Failed to add new device: " + str(ex))
+                        else:
+                            print("Node ID not found in persistence file, so cannot re-create device. Please restart the node.")
+                            
+                        
+
+                    if str(targetDevice) != 'None':
                         #print("targetDevice = " + str(targetDevice))
                         if message.sub_type != 43: # avoid creating a property for V_UNIT_PREFIX
                             try:
@@ -242,71 +282,60 @@ class MySensorsAdapter(Adapter):
                                 targetProperty = targetDevice.find_property(targetPropertyID)
                                 #if self.DEBUG:
                                     #print("adapter; targetProperty = " + str(targetProperty))
+                            except Exception as ex:
+                                print("Error getting target property: " + str(ex))
 
-                                # The property does not exist yet:
-                                if str(targetProperty) == 'None': 
+                            # The property does not exist yet:
+                            if str(targetProperty) == 'None': 
+                                if self.DEBUG:
+                                    print("-Property did not exist yet.")
+                                try:
+                                    child = self.GATEWAY.sensors[message.node_id].children[message.child_id]
                                     if self.DEBUG:
-                                        print("property existence check gave None")
-                                    try:
-                                        child = self.GATEWAY.sensors[message.node_id].children[message.child_id]
-                                        print("-The PyMySensors node existed. Now to add it. Child = " + str(child))
-                                        targetDevice.add_child(child, message.node_id, message.child_id, message.sub_type, message.payload)
-                                        print("-Finished proces of adding new property")
-                                    except Exception as ex:
-                                        if self.DEBUG:
-                                            print("-Error adding property: " + str(ex))
-                                        #if self.persist:
-                                        del self.GATEWAY.sensors[message.node_id].children[message.child_id] # Maybe delete the entire node? Start fresh?
-                                        if self.DEBUG:
-                                            print("Removed faulty node child from persistence data")
-                                        
-
-                                # The property has already been created, so update its value.    
-                                else: 
-                                    if self.DEBUG:
-                                        #pass
-                                        print("-About to update: " + str(targetPropertyID))
+                                        print("-The PyMySensors node existed, and has child data. Now to present it to the WebThings Gateway. Child = " + str(child))
+                                    targetDevice.add_child(child, message.node_id, message.child_id, message.sub_type, message.payload)
+                                    print("-Finished proces of adding new property on new device. Presenting it to the WebThings Gateway now.")
+                                    self.handle_device_added(targetDevice)
                                     
-                                    try:
-                                        if is_a_number(message.payload):
-                                            new_value = get_int_or_float(message.payload)
-                                        else:
-                                            new_value = str(message.payload)
+                                    # Once the property has been created, we create a handle for it.
+                                    targetProperty = targetDevice.find_property(targetPropertyID)
+                                    #device.connected_notify(False)
 
-                                        #print("New update value:" + str(new_value))
-                                        targetProperty = targetDevice.find_property(targetPropertyID)
-                                        #print("Target property object: " + str(targetProperty))
-                                        targetProperty.set_cached_value(new_value)
-                                        targetDevice.notify_property_changed(targetProperty)
-                                        #print("-Adapter has updated the property")
-                                    except Exception as ex:
-                                        print("Update property error: " + str(ex))
-
-                            except Exception as ex:
-                                print("Error while handling 'set' message type: " + str(ex))
-
-                    # Not even the device has been created yet.
-                    else:
-                        if self.DEBUG:
-                            print("Device doesn't exist (yet), so cannot update property. Will try to create the device now using persistence data.")
-                        
-                        if message.node_id in self.GATEWAY.sensors:
-                            try:
-                                if str(self.GATEWAY.sensors[message.node_id].sketch_name) == 'None':
-                                    name = 'MySensors_' + str(message.node_id)
+                                except Exception as ex:
                                     if self.DEBUG:
-                                        print("-Node was in persistence, but no sketch name found.")
-                                else:
-                                    name = str(self.GATEWAY.sensors[message.node_id].sketch_name)
-                                
-                                print("name for the new device is: " + name)
-                                device = MySensorsDevice(self, message.node_id, name)
-                                self.handle_device_added(device)
-                            except Exception as ex:
-                                print("-Failed to add new device from internal presentation: " + str(ex))
-                        else:
-                            print("Node ID not found in persistence file, so cannot re-create device. Please restart the node.")
+                                        print("-Error adding property: " + str(ex))
+                                    del self.GATEWAY.sensors[message.node_id].children[message.child_id] # Maybe delete the entire node? Start fresh?
+                                    if self.DEBUG:
+                                        print("-Removed faulty node child from persistence data")
 
+
+                            # The property has already been created, so just update its value.    
+                            if str(targetProperty) != 'None':
+                                if self.DEBUG:
+                                    #pass
+                                    print("-About to update: " + str(targetPropertyID))
+
+                                try:
+                                    if is_a_number(message.payload):
+                                        new_value = get_int_or_float(message.payload)
+                                    else:
+                                        new_value = str(message.payload)
+
+                                    #print("New update value:" + str(new_value))
+                                    targetProperty = targetDevice.find_property(targetPropertyID)
+                                    #print("Target property object: " + str(targetProperty))
+                                    targetProperty.update(new_value)
+                                    #targetProperty.set_cached_value(new_value)
+                                    #targetDevice.notify_property_changed(targetProperty)
+                                    if self.DEBUG:
+                                        print("-Adapter has updated the property")
+                                except Exception as ex:
+                                    print("Update property error: " + str(ex))
+
+                        if targetDevice.connected == False:
+                            targetDevice.connected = True
+                            targetDevice.connected_notify(True)
+                                    
         except Exception as ex:
             print("-Failed to handle message:" + str(ex))
 
@@ -316,7 +345,6 @@ class MySensorsAdapter(Adapter):
         if self.DEBUG:
             print("Re-requesting presentation of all nodes on the network")
         try:
-            #if not self.persist:
             self.GATEWAY.send('0;255;3;0;26;0\n') # Ask all nodes within earshot to respond with their node ID's.
                 
             # this asks all known devices to re-present themselves. IN a future version this request could only be made to nodes where a device property count is lower than expected.
@@ -374,7 +402,11 @@ class MySensorsAdapter(Adapter):
             return
         
         # Fill the variables
-        self.persist = config['Persistence']
+        
+        if 'Show connection status' in config:
+            print("-Connection status was present in the config data.")
+            self.show_connection_status = config['Show connection status']
+        
         self.DEBUG = config['Debugging']
         selected_gateway_type = str(config['Gateway'])
         

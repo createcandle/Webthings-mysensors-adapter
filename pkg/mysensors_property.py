@@ -45,7 +45,7 @@ class MySensorsProperty(Property):
             if device.adapter.DEBUG:
                 print("property value = " + str(self.value))
             #print("self.device inside property = " + str(self.device))
-            self.device.notify_property_changed(self)
+            #self.device.notify_property_changed(self)
             #print("property init done")
             
         except Exception as ex:
