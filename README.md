@@ -32,4 +32,6 @@ Version 0.0.4 makes persistance selectable, and adds the ability to send a disco
 
 Version 0.0.5 improves type support, implements smarter device removal, makes persistance work as you'd expect (recreates nodes as soon the gateway is restarted), and better implements capabilities support from the Mozilla IoT schema.
 
+Version 0.0.6 added a debug option.
 
+Version 0.0.7 fixed an issue where prefered capability to be centrally displayed was forgotton when the add-on restarted. Also removes the persistence option, and replaces it with the option to show a device as connected only after receiving a signal from it.
