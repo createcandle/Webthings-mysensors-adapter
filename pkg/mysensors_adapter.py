@@ -115,15 +115,18 @@ class MySensorsAdapter(Adapter):
         
         
         
-    def start_pymysensors_gateway(self, selected_gateway_type, dev_port='/dev/ttyUSB0', ip_address='127.0.0.1'):
+    def start_pymysensors_gateway(self, selected_gateway_type, dev_port='/dev/ttyUSB0', ip_address='127.0.0.1:5003'):
         # This is the non-ASynchronous version, which is no longer used:
         #self.GATEWAY = mysensors.AsyncSerialGateway('/dev/ttyUSB0', baud=115200, timeout=1.0, reconnect_timeout=10.0, event_callback=self.event, persistence=False, persistence_file='./mysensors.pickle', protocol_version='2.2')
         #self.GATEWAY.start_persistence()
         #self.GATEWAY.start()
         
         # This is the new asynchronous version of PyMySensors:
-        self.LOOP = asyncio.get_event_loop()
-        self.LOOP.set_debug(False)
+        try:
+            self.LOOP = asyncio.get_event_loop()
+            self.LOOP.set_debug(False)
+        except:
+            print("Error getting asyncio event loop!")
         
         if self.DEBUG:
             logging.basicConfig(level=logging.DEBUG)
@@ -186,8 +189,6 @@ class MySensorsAdapter(Adapter):
 
     def mysensors_message(self, message):
         
-        
-
         # Show some human readable details about the incoming message
         try:
             if self.DEBUG:
@@ -201,13 +202,18 @@ class MySensorsAdapter(Adapter):
             # If the messages is coming from the Arduino that acts as the MySensors gateway radio:
             if message.node_id == 0: # and message.ack == 0: # Ignore the gateway itself. It should not be presented as a device.
                 if message.sub_type == 18 and self.first_request_done == False:
+                    try:
+                        self.recreate_from_persistence() # Recreate everything from the persistence file.
+                    except:
+                        print("Error while starting recreation of things from persistence data")
                     
-                    self.recreate_from_persistence() # Recreate everything from the persistence file.
-                    
-                    self.first_request_done = True
-                    self.t = threading.Thread(target=self.rerequest)
-                    self.t.daemon = True
-                    self.t.start()
+                    try:
+                        self.first_request_done = True
+                        self.t = threading.Thread(target=self.rerequest)
+                        self.t.daemon = True
+                        self.t.start()
+                    except:
+                        print("Error while starting threaded re-request of all nodes in the MySensors network.")
                     
             
             # If the messages is coming from a device in the MySensors network:
@@ -377,77 +383,93 @@ class MySensorsAdapter(Adapter):
 
         self.pairing = True
         
-        # re-request that all nodes present themselves.
-        if not self.t.is_alive():
-            self.t = threading.Thread(target=self.rerequest)
-            self.t.daemon = True
-            self.t.start()
-        else:
-            if self.DEBUG:
-                print("ALREADY REQUESTING PRESENTATIONS FROM NODES")
-        
+        try:
+            # re-request that all nodes present themselves.
+            if not self.t.is_alive():
+                self.t = threading.Thread(target=self.rerequest)
+                self.t.daemon = True
+                self.t.start()
+            else:
+                if self.DEBUG:
+                    print("ALREADY REQUESTING PRESENTATIONS FROM NODES")
+        except Exception as ex:
+            print("Error re-requesting node ID's from devices in the MySensors network:" + str(ex))
+                    
         return
 
 
     def add_from_config(self):
         """Attempt to add all configured devices."""
-        database = Database('mysensors-adapter')
-        if not database.open():
-            return
+        try:
+            database = Database('mysensors-adapter')
+            if not database.open():
+                return
 
-        config = database.load_config()
-        database.close()
+            config = database.load_config()
+            database.close()
+        except:
+            print("Error! Failed to open settings database.")
 
-        if not config or 'Gateway' not in config or 'Persistence' not in config or 'Debugging' not in config:
+        if not config:
+            print("Error loading config from database")
             return
         
         # Fill the variables
         
-        if 'Show connection status' in config:
-            print("-Connection status was present in the config data.")
-            self.show_connection_status = config['Show connection status']
-        
-        self.DEBUG = config['Debugging']
-        selected_gateway_type = str(config['Gateway'])
-        
-        # Select the desired PyMySensors type
-        if config['Gateway'] == 'USB Serial gateway':
-            print("Selected: USB Serial gateway")
-            
-            if 'USB device name' not in config:
-                dev_port = '/dev/ttyUSB0'
-            elif str(config['USB device name']) == '':
-                dev_port = '/dev/ttyUSB0'
+        try:
+            if 'Show connection status' in config:
+                print("-Connection status was present in the config data.")
+                self.show_connection_status = config['Show connection status']
+            if 'Debugging' in config:
+                self.DEBUG = config['Debugging']
             else:
-                dev_port = str(config['USB device name'])
-            
-            self.start_pymysensors_gateway(selected_gateway_type, dev_port, '')
-        
-        elif config['Gateway'] == 'Ethernet gateway':
-            print("Selected: Ethernet gateway")
-            
-            if 'IP address' not in config:
-                ip_address = '127.0.0.1'
-            elif str(config['IP address']) == '':
-                ip_address = '127.0.0.1'
+                self.DEBUG = False
+                
+            if 'Gateway' in config:
+                selected_gateway_type = str(config['Gateway'])
+                print("-Gateway choice: " + selected_gateway_type)
             else:
-                ip_address = str(config['IP address'])
-            
-            self.start_pymysensors_gateway(selected_gateway_type, '', ip_address)
-            
-        elif config['Gateway'] == 'MQTT gateway':
-            print("Selected: MQTT gateway")
-            
-            if 'IP address' not in config:
-                ip_address = '127.0.0.1'
-            elif str(config['IP address']) == '':
-                ip_address = '127.0.0.1'
-            else:
-                ip_address = str(config['IP address'])
-            
-            self.start_pymysensors_gateway(selected_gateway_type, '', ip_address)
-        
-        print("-loaded config")
+                print("Error: no gateway type selected in add-on settings!")
+
+            # Select the desired PyMySensors type
+            if selected_gateway_type == 'USB Serial gateway':
+
+                if 'USB device name' not in config or str(config['USB device name']) == '':
+                    print("USB gateway selected, but no device name selected. Using default (/dev/ttyUSB0)")
+                    dev_port = '/dev/ttyUSB0'
+                else:
+                    dev_port = str(config['USB device name'])
+
+                if self.DEBUG:
+                    print("Selected USB device address: " + str(ip_address))
+                self.start_pymysensors_gateway(selected_gateway_type, dev_port, '')
+
+            elif selected_gateway_type == 'Ethernet gateway':
+
+                if 'IP address' not in config or str(config['IP address']) == '':
+                    ip_address = '127.0.0.1:5003'
+                else:
+                    ip_address = str(config['IP address'])
+                
+                if self.DEBUG:
+                    print("Selected IP address and port: " + str(ip_address))
+                self.start_pymysensors_gateway(selected_gateway_type, '', ip_address)
+
+            elif selected_gateway_type == 'MQTT gateway':
+
+                if 'IP address' not in config or str(config['IP address']) == '':
+                    ip_address = '127.0.0.1'
+                else:
+                    ip_address = str(config['IP address'])
+                
+                if self.DEBUG:
+                    print("Selected IP address: " + str(ip_address))
+                self.start_pymysensors_gateway(selected_gateway_type, '', ip_address)
+
+            if self.DEBUG:
+                print("MySensors add-on has succesfully loaded the configuration.")
+        except Exception as ex:
+            print("Error extracting settings from config object: " + str(ex))
         return
 
 
