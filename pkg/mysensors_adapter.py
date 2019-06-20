@@ -2,6 +2,7 @@
 
 import os
 import time
+import json
 import asyncio
 import logging
 import threading
@@ -48,12 +49,9 @@ class MySensorsAdapter(Adapter):
                     'mysensors-adapter-persistence.json'
                 )
         
-        self.DEBUG = False
+        self.DEBUG = True
         self.show_connection_status = True
-        self.first_request_done = False
-        
-        self.t = threading.Thread(target=self.rerequest)
-        self.t.daemon = True
+        self.first_request_done = False;
         
         try:
             self.add_from_config()
@@ -61,26 +59,34 @@ class MySensorsAdapter(Adapter):
             print("Error loading config (and initialising PyMySensors library?): " + str(ex))
 
 
+
     def recreate_from_persistence(self):
         print("RECREATING DEVICES FROM PERSISTENCE")
+        
         try:
-            for nodeIndex in self.GATEWAY.sensors:
-                if nodeIndex != 0:
+            with open(self.persistence_file_path) as f:
+                self.last_known_data = json.load(f)
+                #print(str(self.last_known_data))
+        except:
+            print("Could not open persistence JSON file (if you just installed the add-on then this is normal)")
+            return
+        
+        try:
+            for nodeIndex in self.last_known_data:
+                if self.DEBUG:
+                    print("")
+                    print("#" + str(nodeIndex))
+                node = self.last_known_data[nodeIndex]
+                #print("node object:" + str(node))
+                if int(nodeIndex) != 0:
                     try:
-                        #print("Adding from persistence file = " + str(nodeIndex))
-                        #newNodeObject = self.GATEWAY.sensors[message.node_id]
-                        #print("new Node object = " + str(self.GATEWAY.sensors[nodeIndex]))
-                        #print("new Node object sensor ID = " + str(self.GATEWAY.sensors[nodeIndex].sensor_id))
-                        
-                        name = "nameless"
-                        # Come up with a name for the device
-                        if str(self.GATEWAY.sensors[nodeIndex].sketch_name) == 'None':
-                            name = 'MySensors_' + str(nodeIndex)
-                            #name = 'MySensors_{}'.format(nodeIndex)
+                        if str(node['sketch_name']) == 'None':
+                            name = 'MySensors_{}'.format(nodeIndex)
                             if self.DEBUG:
                                 print("-Node was in persistence, but no sketch name was found.")
                         else:
-                            name = str(self.GATEWAY.sensors[nodeIndex].sketch_name)
+                            name = str(node['sketch_name']) ##str(self.last_known_data[nodeIndex].sketch_name)
+                            
                         if self.DEBUG:
                             print("")
                         print("-Recreating: " + name)
@@ -88,15 +94,15 @@ class MySensorsAdapter(Adapter):
                         # We create the device object
                         device = MySensorsDevice(self, nodeIndex, name)
                         
-                        # We add all the children to it as properties
-                        if self.GATEWAY.sensors[nodeIndex].children:
-                            for childIndex in self.GATEWAY.sensors[nodeIndex].children:
-                                child = self.GATEWAY.sensors[nodeIndex].children[childIndex]
-                                
-                                if child.values:
-                                    for valueIndex in child.values:
-                                        if valueIndex != 43: #Avoid V_UNIT_PREFIX
-                                            device.add_child(child, nodeIndex, childIndex, valueIndex, child.values[valueIndex])
+                        if node['children']:
+                            for childIndex in node['children']:
+                                child = node['children'][childIndex] #self.last_known_data[nodeIndex].children[childIndex]
+                                #print("CHILD OBJECT: " + str(child))
+                                if child['values']:
+                                    for valueIndex in child['values']:
+                                        #print("child['values'][" + str(valueIndex) + "] = " + str(child['values'][valueIndex]))
+                                        if int(valueIndex) != 43: #Avoid V_UNIT_PREFIX
+                                            device.add_child(child['description'], nodeIndex, childIndex, child['type'], valueIndex, child['values'], child['values'][valueIndex])
                                             
                         # Finally, now that the device is complete, we present it to the Gateway.
                         self.handle_device_added(device)
@@ -105,27 +111,30 @@ class MySensorsAdapter(Adapter):
                         print("Error during recreation of thing from persistence: " + str(ex))
                         
                     # Optionally, set the initial connection status to 'not connected'.
-                    if self.show_connection_status:
-                        try:
+                    try:
+                        #print("self.show_connection_status = " + str(self.show_connection_status))
+                        if self.show_connection_status == True:
+                            #print("Showing device as disconnected. It will be set to 'connected' as soon as it actually makes a connection.")
                             # Create a handle to the new device, and use its notify function.
                             targetDevice = self.get_device("MySensors_" + str(nodeIndex))
                             if targetDevice != 'None':
                                 targetDevice.connected_notify(False)
                                 if self.DEBUG:
-                                    print("-Seting intial device status to not connected.")
-                        except Exception as ex:
-                            print("Failed to set initial connection status to false: " + str(ex))
+                                    print("-Setting initial device status to not connected.")
+                        else:
+                            print("Not changing connection status")
+                    except Exception as ex:
+                        print("Failed to set initial connection status to false: " + str(ex))
 
         except Exception as ex:
             print("Error during recreation from persistence: " + str(ex))
 
 
-   
 
-        
-        
-        
-    def start_pymysensors_gateway(self, selected_gateway_type, dev_port='/dev/ttyUSB0', ip_address='127.0.0.1:5003'):
+
+
+
+    def start_pymysensors_gateway(self, selected_gateway_type, dev_port='/dev/ttyUSB0', ip_address='127.0.0.1'):
         # This is the non-ASynchronous version, which is no longer used:
         #self.GATEWAY = mysensors.AsyncSerialGateway('/dev/ttyUSB0', baud=115200, timeout=1.0, reconnect_timeout=10.0, event_callback=self.event, persistence=False, persistence_file='./mysensors.pickle', protocol_version='2.2')
         #self.GATEWAY.start_persistence()
@@ -138,10 +147,10 @@ class MySensorsAdapter(Adapter):
         except:
             print("Error getting asyncio event loop!")
         
-        if self.DEBUG:
-            logging.basicConfig(level=logging.DEBUG)
-        else:
-            logging.basicConfig(level=logging.INFO)
+        #if self.DEBUG:
+        #    logging.basicConfig(level=logging.DEBUG)
+        #else:
+        #    logging.basicConfig(level=logging.INFO) # TODO try ERROR level?
         
         # Establishing a MySensors gateway:
         try:
@@ -151,7 +160,6 @@ class MySensorsAdapter(Adapter):
                     persistence=True, persistence_file=self.persistence_file_path, 
                     protocol_version='2.2')
                 
-            
             elif selected_gateway_type == 'Ethernet gateway':
                 self.GATEWAY = mysensors.AsyncTCPGateway(ip_address, event_callback=self.mysensors_message, 
                     persistence=True, persistence_file=self.persistence_file_path, 
@@ -161,12 +169,14 @@ class MySensorsAdapter(Adapter):
                 self.GATEWAY = mysensors.AsyncMQTTGateway(ip_address, event_callback=self.mysensors_message, 
                     persistence=True, persistence_file=self.persistence_file_path, 
                     protocol_version='2.2')
-            
+                
             self.LOOP.run_until_complete(self.GATEWAY.start_persistence())
-            self.LOOP.run_until_complete(self.GATEWAY.start())
+            self.LOOP.run_until_complete(self.GATEWAY.start())    
             self.LOOP.run_forever()
+            
+            
         except Exception as ex:  # pylint: disable=broad-except
-            print("Unable to initialise the PyMySensors object. Error: " + str(ex))    
+            print("ERROR! Unable to initialise the PyMySensors object. Details: " + str(ex))    
 
 
 
@@ -174,9 +184,13 @@ class MySensorsAdapter(Adapter):
         print("Shutting down MySensors adapter")
         try:
             self.GATEWAY.stop()
+        except:
+            print("MySensors adapter was unable to cleanly close PyMySensors object. This is not a problem.")
+        try:
+            self.LOOP.stop()
             self.LOOP.close()
         except:
-            print("MySensors adapter was unable to cleanly close PyMySensors. This is not a problem.")
+            print("MySensors adapter was unable to cleanly close PyMySensors loop. This is not a problem.")
 
 
     def remove_thing(self, device_id):
@@ -202,6 +216,7 @@ class MySensorsAdapter(Adapter):
         try:
             if self.DEBUG:
                 type_names = ['presentation','set','request','internal','stream']
+                print("")
                 print(">> incoming message > " + str(type_names[message.type]) + " > id: " + str(message.node_id) + "; child: " + str(message.child_id) + "; subtype: " + str(message.sub_type) + "; payload: " + str(message.payload))
         except:
             print("Error while displaying incoming message in console.")
@@ -209,19 +224,28 @@ class MySensorsAdapter(Adapter):
         
         
         # When the first message arrives, try to re-create things from persistence, and then ask all nodes to present themselves.
-        try:
-            if self.first_request_done == False:
-                self.first_request_done = True
-                try:
-                    self.recreate_from_persistence() # Recreate everything from the persistence file.
-                except Exception as ex:
-                    print("Error while initiating recreate_from_persistence: " + str(ex))
-                try:
-                    self.try_rerequest() # Aks all nodes to present themselves
-                except Exception as ex:
-                    print("Error while initiating re-request of nodes: " + str(ex))
-        except:
-            print("Error dealing with first incoming message")
+        #try:
+        if self.first_request_done == False:
+            self.first_request_done = True
+            
+            #try:
+                #self.rt = threading.Thread(target=self.recreate_from_persistence)
+                #self.rt.daemon = True
+                #self.rt.start()
+                #self.recreate_from_persistence() # Recreate everything from the persistence file.
+                #print("------Initiated recreating------")
+                #return
+            #except Exception as ex:
+            #    print("Error while initiating recreate_from_persistence: " + str(ex))
+
+            
+            
+            try:
+                self.try_rerequest() # Asks all nodes to present themselves
+            except Exception as ex:
+                print("Error while initiating re-request of nodes: " + str(ex))
+        #except:
+            #print("Error dealing with first incoming message")
         
         
         # Handle the incoming message
@@ -305,12 +329,33 @@ class MySensorsAdapter(Adapter):
                             if str(targetProperty) == 'None': 
                                 if self.DEBUG:
                                     print("-Property did not exist yet.")
+                                    
                                 try:
                                     child = self.GATEWAY.sensors[message.node_id].children[message.child_id]
+                                    print("child: " + str(child))
                                     if self.DEBUG:
                                         print("-The PyMySensors node existed, and has child data. Now to present it to the WebThings Gateway. Child = " + str(child))
-                                    targetDevice.add_child(child, message.node_id, message.child_id, message.sub_type, message.payload)
-                                    print("-Finished proces of adding new property on new device. Presenting it to the WebThings Gateway now.")
+                                    
+                                    if not child.description:
+                                        print("-Child had no description")
+                                        new_description = 'Property type ' + str(message.sub_type)
+                                    else:
+                                        new_description = child.description
+                                        print("new new description: " + str(new_description))
+                                        
+                                    if not child.values:
+                                        values = {}
+                                    else:
+                                        values = child.values
+                                        print("new new values: " + str(values))
+                                        
+                                    if not child.type:
+                                        print("somehow there was no type data?")
+                                        return
+                                    
+                                    # def add_child(self, new_description, node_id, child_id, main_type, sub_type, values, value):
+                                    targetDevice.add_child(new_description, message.node_id, message.child_id, child.type, message.sub_type, values, message.payload)
+                                    print("-Finished proces of adding new property on new device. Presenting device to the WebThings Gateway now.")
                                     self.handle_device_added(targetDevice)
                                     
                                     # Once the property has been created, we create a handle for it.
@@ -359,20 +404,10 @@ class MySensorsAdapter(Adapter):
 
 
     def try_rerequest(self):
-        print("try_rerequest() called")
         # re-request that all nodes present themselves, but only is that thread isn't already running / doesn't already exist.
         try:
-            self.t
-        except NameError:
-            try:
-                self.t = threading.Thread(target=self.rerequest)
-                self.t.daemon = True
-                self.t.start()
-                print("Re-request thread created")
-            except:
-                print("Could not create thread")
-        else:
-            try:
+            if self.t:
+                print("Thread already existed")
                 if not self.t.is_alive():
                     # Restarting request for presentation of nodes
                     self.t = threading.Thread(target=self.rerequest)
@@ -382,20 +417,24 @@ class MySensorsAdapter(Adapter):
                 else:
                     if self.DEBUG:
                         print("Already busy re-requesting nodes.")
+        except:
+            try:
+                self.t = threading.Thread(target=self.rerequest)
+                self.t.daemon = True
+                self.t.start()
+                if self.DEBUG:
+                    print("Re-request thread created")
             except:
-                print("Error checking if re-request thread was alive")
-            
-            return
+                print("Could not create thread")
 
 
-    def rerequest(self):
-        print("rerequest() called")
+    def rerequest(self):   
         if self.DEBUG:
             print("Re-requesting presentation of all nodes on the network")
         try:
-            self.GATEWAY.send('0;255;3;0;26;0\n') # Ask all nodes within earshot to respond with their node ID's.
+            #self.GATEWAY.send('0;255;3;0;26;0\n') # Ask all nodes within earshot to respond with their node ID's.
                 
-            # this asks all known devices to re-present themselves. IN a future version this request could only be made to nodes where a device property count is lower than expected.
+            # this asks all known devices to re-present themselves. In a future version this request could only be made to nodes where a device property count is lower than expected.
             for index in self.GATEWAY.sensors: #, sensor
                 if index != 0:
                     if self.DEBUG:
@@ -406,9 +445,6 @@ class MySensorsAdapter(Adapter):
                     
         except:
             print("error while manually re-requesting presentations")
-        
-        return
-            
 
 
     def start_pairing(self, timeout):
@@ -453,13 +489,24 @@ class MySensorsAdapter(Adapter):
         
         try:
             if 'Show connection status' in config:
-                print("-Connection status was present in the config data.")
-                self.show_connection_status = config['Show connection status']
+                print("-Connection status is present in the config data.")
+                self.show_connection_status = bool(config['Show connection status'])
+                
             if 'Debugging' in config:
                 self.DEBUG = config['Debugging']
             else:
                 self.DEBUG = False
-                
+        except:
+            print("error loading part 1 of settings")
+
+        try:
+            self.recreate_from_persistence()
+        except Exception as ex:
+            print("Error while recreating after start_persistence: " + str(ex))
+
+
+
+        try:
             if 'Gateway' in config:
                 selected_gateway_type = str(config['Gateway'])
                 print("-Gateway choice: " + selected_gateway_type)

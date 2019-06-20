@@ -35,12 +35,14 @@ class MySensorsDevice(Device):
         #self._id = str(_id)
         self.name = sketch_name
         self.description = sketch_name
-        self._type = []
+        self._type = [] # TODO: isn't this deprecated?
         self.properties = {}
         #print("device self.properties at init: " + str(self.properties))
-        self.connected = False # Will be set to true once we receive an actual message from the node.
+        self.connected = False # Will be set to true once we receive an actual message from the node. # TODO: is this still used?
 
-    def add_child(self, child, node_id, child_id, sub_type, value):
+
+
+    def add_child(self, new_description, node_id, child_id, main_type, sub_type, values, value):
         #print()
         print("+ DEVICE.ADD_CHILD with child_id: " + str(child_id))
         
@@ -51,18 +53,18 @@ class MySensorsDevice(Device):
         prefix = '' # prefix starts as an empty string.
         try:
             
-            if not child.description:
-                print("-Child had no description")
-                new_description = 'Property type ' + str(sub_type)
-            else:
-                new_description = child.description
+            #if not child.description:
+            #    print("-Child had no description")
+            #    new_description = 'Property type ' + str(sub_type)
+            #else:
+            #    new_description = child.description
 
             decription_addendum = '' # If a child has multiple values (yes this is possible..) we should give them all a different name.
             value_counter = 0
-            for childSubType in child.values: # The values dictionary can contain multiple items. We loop over each one.
+            for childSubType in values: # The values dictionary can contain multiple items. We loop over each one.
                 if childSubType == 43: # If this is a prefix, then don't turn it into a property.
                     print("-Found a prefix")
-                    prefix = str(child.values[childSubType])
+                    prefix = str(values[childSubType])
                 else:
                     value_counter += 1
                     if childSubType == sub_type and value_counter > 1:
@@ -71,7 +73,7 @@ class MySensorsDevice(Device):
                         decription_addendum = ' ' + str(value_counter)
                         
             new_description = new_description + decription_addendum # this adds a number at the end of the property if there would be more than one with the same name.
-            print("new_description = " + str(new_description))
+            #print("new_description = " + str(new_description))
         except:
             print("Weird: error while looking for a prefix")
 
@@ -80,9 +82,11 @@ class MySensorsDevice(Device):
             new_node_id = str(node_id) #str(message.node_id)
             new_child_id = str(child_id) #str(message.child_id)
             #new_sub_type = str(message.sub_type)
-            new_sub_type = sub_type
+            #new_type = type
+            new_main_type = int(main_type)
+            new_sub_type = int(sub_type)
             #new_value = str(value)
-            
+            # 
             
             if is_a_number(value):
                 new_value = get_int_or_float(value)
@@ -92,15 +96,14 @@ class MySensorsDevice(Device):
             targetPropertyID = str(new_node_id) + "-" + str(new_child_id) + "-" + str(new_sub_type) # e.g. 2-5-36
             
             if self.adapter.DEBUG:
-                print("Child object: " + str(child))
-                #print("child.type = " + str(child.type)) # Funnily enough, this S_ type is not really needed.
-                
-                #print("new_description = " + str(new_description))
+                # required: new_value, new_node_id, new_child_id, new_sub_type
+                print("new_description = " + str(new_description))
                 print("node_id = " + str(new_node_id))
                 print("child_id = " + str(new_child_id))
+                print("new_main_type: " + str(new_main_type))
                 print("sub_type = " + str(new_sub_type))
-
-                print("child.type: " + str(child.type))
+                print("value = " + str(new_value))
+                
                 print("targetPropertyID = " + str(targetPropertyID))
             
 
@@ -114,7 +117,7 @@ class MySensorsDevice(Device):
 
 
         try:
-            if child.type == 0:                         # Door
+            if new_main_type == 0:                         # Door
                 if new_sub_type == 16: # V_TRIPPED
                     self._type.append('DoorSensor')           
                     self.properties[targetPropertyID] = MySensorsProperty(
@@ -140,7 +143,7 @@ class MySensorsDevice(Device):
                         new_value, new_node_id, new_child_id, new_sub_type)
 
 
-            elif child.type == 1:                       # Motion
+            elif new_main_type == 1:                       # Motion
                 if new_sub_type == 16: # V_TRIPPED
                     self._type.append('MotionSensor')   
                     self.properties[targetPropertyID] = MySensorsProperty(
@@ -165,7 +168,7 @@ class MySensorsDevice(Device):
                         new_value, new_node_id, new_child_id, new_sub_type)
 
 
-            elif child.type == 2:                       # Smoke
+            elif new_main_type == 2:                       # Smoke
                 if new_sub_type == 16: # V_TRIPPED
                     self._type.append('Alarm')           
                     self.properties[targetPropertyID] = MySensorsProperty(
@@ -190,7 +193,7 @@ class MySensorsDevice(Device):
                         new_value, new_node_id, new_child_id, new_sub_type)
 
 
-            elif child.type == 3:                       # Binary
+            elif new_main_type == 3:                       # Binary
                 if new_sub_type == 2: # V_STATUS
                     self._type.append('OnOffSwitch')           
                     self.properties[targetPropertyID] = MySensorsProperty(
@@ -218,7 +221,7 @@ class MySensorsDevice(Device):
                         new_value, new_node_id, new_child_id, new_sub_type)
 
 
-            elif child.type == 4:                       # Dimmer
+            elif new_main_type == 4:                       # Dimmer
                 if new_sub_type == 2: # V_STATUS
                     #self._type.append('Light')
                     self.properties[targetPropertyID] = MySensorsProperty(
@@ -260,7 +263,7 @@ class MySensorsDevice(Device):
                         new_value, new_node_id, new_child_id, new_sub_type)
 
 
-            elif child.type == 5:                       # Window covers (percentage)
+            elif new_main_type == 5:                       # Window covers (percentage)
                 if new_sub_type == 3: # V_PERCENTAGE
                     self._type.append('MultiLevelSwitch')
                     self.properties[targetPropertyID] = MySensorsProperty(
@@ -299,7 +302,7 @@ class MySensorsDevice(Device):
 
 
 
-            elif child.type == 6:                       # Temperature
+            elif new_main_type == 6:                       # Temperature
                 if new_sub_type == 0: # V_TEMP
                     self._type.append('TemperatureSensor')
                     self.properties[targetPropertyID] = MySensorsProperty(
@@ -315,7 +318,7 @@ class MySensorsDevice(Device):
                     new_value, new_node_id, new_child_id, new_sub_type)
 
 
-            elif child.type == 7:                       # Humidity
+            elif new_main_type == 7:                       # Humidity
                 if new_sub_type == 1: # V_HUM
                     self._type.append('MultiLevelSensor')
                     self.properties[targetPropertyID] = MySensorsProperty(
@@ -333,7 +336,7 @@ class MySensorsDevice(Device):
                         new_value, new_node_id, new_child_id, new_sub_type)
 
 
-            elif child.type == 8:                       # Barometer
+            elif new_main_type == 8:                       # Barometer
                 if new_sub_type == 4: # V_PRESSURE (atmospheric pressure)
                     self._type.append('MultiLevelSensor')                
                     self.properties[targetPropertyID] = MySensorsProperty(
@@ -361,7 +364,7 @@ class MySensorsDevice(Device):
                         new_value, new_node_id, new_child_id, new_sub_type)
 
 
-            elif child.type == 9:                       # Wind
+            elif new_main_type == 9:                       # Wind
                 if new_sub_type == 8 or new_sub_type == 9: # V_WIND and V_GUST     
                     self.properties[targetPropertyID] = MySensorsProperty(
                         self,
@@ -384,7 +387,7 @@ class MySensorsDevice(Device):
                         new_value, new_node_id, new_child_id, new_sub_type)
 
                     
-            elif child.type == 10:                      # Rain
+            elif new_main_type == 10:                      # Rain
                 if new_sub_type == 6: # V_RAIN
                     self.properties[targetPropertyID] = MySensorsProperty(
                         self,
@@ -407,7 +410,7 @@ class MySensorsDevice(Device):
                         new_value, new_node_id, new_child_id, new_sub_type)
 
 
-            elif child.type == 11:                      # UV level
+            elif new_main_type == 11:                      # UV level
                 if new_sub_type == 11: # V_UV
                     self.properties[targetPropertyID] = MySensorsProperty(
                         self,
@@ -420,7 +423,7 @@ class MySensorsDevice(Device):
                         new_value, new_node_id, new_child_id, new_sub_type)
 
                     
-            elif child.type == 12:                      # Weight
+            elif new_main_type == 12:                      # Weight
                 if new_sub_type == 12: # V_WEIGHT
                     self.properties[targetPropertyID] = MySensorsProperty(
                         self,
@@ -432,7 +435,7 @@ class MySensorsDevice(Device):
                         },
                         new_value, new_node_id, new_child_id, new_sub_type)
 
-            elif child.type == 13:                      # Power measuring device, like power meters
+            elif new_main_type == 13:                      # Power measuring device, like power meters
                 if new_sub_type == 17: # V_WATT
                     self.properties[targetPropertyID] = MySensorsProperty(
                         self,
@@ -448,7 +451,7 @@ class MySensorsDevice(Device):
 
 
 
-            elif child.type == 14:                      # Heater
+            elif new_main_type == 14:                      # Heater
                 if new_sub_type == 0: # V_TEMP
                     self._type.append('TemperatureSensor')
                     self.properties[targetPropertyID] = MySensorsProperty(
@@ -522,7 +525,7 @@ class MySensorsDevice(Device):
                         new_value, new_node_id, new_child_id, new_sub_type)
                     
 
-            elif child.type == 15:                      # Distance
+            elif new_main_type == 15:                      # Distance
                 if new_sub_type == 13: #V_DISTANCE
                     #self._type.append('MultiLevelSensor')
                     if prefix != '':
@@ -548,7 +551,7 @@ class MySensorsDevice(Device):
                             new_value, new_node_id, new_child_id, new_sub_type)
 
 
-            elif child.type == 16:                      # Light level
+            elif new_main_type == 16:                      # Light level
                 if new_sub_type == 23: #V_LIGHT_LEVEL
                     self.properties[targetPropertyID] = MySensorsProperty(
                         self,
@@ -575,13 +578,13 @@ class MySensorsDevice(Device):
                         new_value, new_node_id, new_child_id, new_sub_type)
 
 
-            elif child.type == 17:                      # Arduino node. This should not be turned into a property.
+            elif new_main_type == 17:                      # Arduino node. This should not be turned into a property.
                 pass #          
 
-            elif child.type == 18:                      # Arduino repeater. This should not be turned into a property.
+            elif new_main_type == 18:                      # Arduino repeater. This should not be turned into a property.
                 pass
 
-            elif child.type == 19:                      # Lock                        
+            elif new_main_type == 19:                      # Lock                        
                 if new_sub_type == 36: # V_LOCK_STATUS
                     self._type.append('OnOffSwitch')                    
                     self.properties[targetPropertyID] = MySensorsProperty(
@@ -595,11 +598,11 @@ class MySensorsDevice(Device):
                         new_value, new_node_id, new_child_id, new_sub_type)
 
 
-            elif child.type == 20:                      # Ir sender/receiver device
+            elif new_main_type == 20:                      # Ir sender/receiver device
                 pass       
 
 
-            elif child.type == 21:                      # Water flow
+            elif new_main_type == 21:                      # Water flow
                 if new_sub_type == 37: # V_LEVEL
                     self.properties[targetPropertyID] = MySensorsProperty(
                         self,
@@ -612,7 +615,7 @@ class MySensorsDevice(Device):
                         new_value, new_node_id, new_child_id, new_sub_type)
 
 
-            elif child.type == 22:                      # Air quality
+            elif new_main_type == 22:                      # Air quality
                 if new_sub_type == 37: # V_LEVEL
                     if prefix != '':
                         self.properties[targetPropertyID] = MySensorsProperty(
@@ -637,7 +640,7 @@ class MySensorsDevice(Device):
                             new_value, new_node_id, new_child_id, new_sub_type)
 
 
-            elif child.type == 23:                      # CUSTOM
+            elif new_main_type == 23:                      # CUSTOM
                 if new_sub_type == 48: # V_CUSTOM
                     self.properties[targetPropertyID] = MySensorsProperty(
                         self,
@@ -650,7 +653,7 @@ class MySensorsDevice(Device):
                         new_value, new_node_id, new_child_id, new_sub_type)
 
 
-            elif child.type == 24:                      # S_DUST
+            elif new_main_type == 24:                      # S_DUST
                 if new_sub_type == 37: # V_LEVEL
                     if prefix != '':
                         self.properties[targetPropertyID] = MySensorsProperty(
@@ -675,7 +678,7 @@ class MySensorsDevice(Device):
                             new_value, new_node_id, new_child_id, new_sub_type)
 
 
-            elif child.type == 25:                      # Scene controller
+            elif new_main_type == 25:                      # Scene controller
                 if new_sub_type == 19 or new_sub_type == 20: # V_SCENE_ON and V_SCENE_OFF
                     self._type.append('PushButton')
                     self.properties[targetPropertyID] = MySensorsProperty(
@@ -689,7 +692,7 @@ class MySensorsDevice(Device):
                         new_value, new_node_id, new_child_id, new_sub_type)
 
 
-            elif child.type == 26 or child.type == 27:                      # RGB light or RGB light with separate white level
+            elif new_main_type == 26 or new_main_type == 27:                      # RGB light or RGB light with separate white level
                 #self._type.append(['OnOffSwitch', 'Light', 'ColorControl'])
                 #pass #todo
                 if new_sub_type == 2: # V_STATUS
@@ -719,12 +722,12 @@ class MySensorsDevice(Device):
                         },
                         new_value, new_node_id, new_child_id, new_sub_type)
 
-            #elif child.type == 27:                      # RGB light with separate white level
+            #elif new_main_type == 27:                      # RGB light with separate white level
             #    #self._type.append(['OnOffSwitch', 'Light', 'ColorControl'])
             #    pass #todo
 
 
-            elif child.type == 28:                      # Color sensor
+            elif new_main_type == 28:                      # Color sensor
                 self.properties[targetPropertyID] = MySensorsProperty(
                     self,
                     targetPropertyID,
@@ -736,7 +739,7 @@ class MySensorsDevice(Device):
                     new_value, new_node_id, new_child_id, new_sub_type)
 
 
-            elif child.type == 29:                      # Thermostat / HVAC
+            elif new_main_type == 29:                      # Thermostat / HVAC
                 if new_sub_type == 21: # V_HVAC_FLOW_STATE
                     #self._type.append('MultiLevelSwitch')
                     self.properties[targetPropertyID] = MySensorsProperty(
@@ -820,7 +823,7 @@ class MySensorsDevice(Device):
                     new_value, new_node_id, new_child_id, new_sub_type)
 
 
-            elif child.type == 30:                      # Volt meter
+            elif new_main_type == 30:                      # Volt meter
                 #self._type.append('MultiLevelSensor')
                 self.properties[targetPropertyID] = MySensorsProperty(
                     self,
@@ -835,7 +838,7 @@ class MySensorsDevice(Device):
                     new_value, new_node_id, new_child_id, new_sub_type)
 
 
-            elif child.type == 31:                      # Sprinkler
+            elif new_main_type == 31:                      # Sprinkler
                 if new_sub_type == 2: #V_status
                     #self._type.append('OnOffSwitch')
                     self.properties[targetPropertyID] = MySensorsProperty(
@@ -862,7 +865,7 @@ class MySensorsDevice(Device):
                         new_value, new_node_id, new_child_id, new_sub_type)
 
 
-            elif child.type == 32:                      # Water leak
+            elif new_main_type == 32:                      # Water leak
                 if new_sub_type == 15: #V_ARMED
                     self.properties[targetPropertyID] = MySensorsProperty(
                         self,
@@ -885,7 +888,7 @@ class MySensorsDevice(Device):
                         new_value, new_node_id, new_child_id, new_sub_type)
 
 
-            elif child.type == 33:                       # Sound
+            elif new_main_type == 33:                       # Sound
                 #self._type.append('MultiLevelSensor')        
                 self.properties[targetPropertyID] = MySensorsProperty(
                     self,
@@ -898,7 +901,7 @@ class MySensorsDevice(Device):
                     new_value, new_node_id, new_child_id, new_sub_type)
 
 
-            elif child.type == 34:                       # Vibration
+            elif new_main_type == 34:                       # Vibration
                 #self._type.append('MultiLevelSensor')        
                 self.properties[targetPropertyID] = MySensorsProperty(
                     self,
@@ -911,7 +914,7 @@ class MySensorsDevice(Device):
                     new_value, new_node_id, new_child_id, new_sub_type)
 
 
-            elif child.type == 35:                       # Moisture
+            elif new_main_type == 35:                       # Moisture
                 #self._type.append('MultiLevelSensor')        
                 if new_sub_type == 37: # V_LEVEL
                     self.properties[targetPropertyID] = MySensorsProperty(
@@ -948,7 +951,7 @@ class MySensorsDevice(Device):
                         new_value, new_node_id, new_child_id, new_sub_type)
 
 
-            elif child.type == 36:                      # S_Info
+            elif new_main_type == 36:                      # S_Info
                 if new_sub_type == 47: # V_TEXT
                     self.properties[targetPropertyID] = MySensorsProperty(
                         self,
@@ -960,7 +963,7 @@ class MySensorsDevice(Device):
                         new_value, new_node_id, new_child_id, new_sub_type)
 
 
-            elif child.type == 38:                      # Gas
+            elif new_main_type == 38:                      # Gas
                 if new_sub_type == 34 or new_sub_type == 35: # V_FLOW & V_VOLUME
                     self.properties[targetPropertyID] = MySensorsProperty(
                         self,
@@ -973,7 +976,7 @@ class MySensorsDevice(Device):
                         new_value, new_node_id, new_child_id, new_sub_type)
 
 
-            elif child.type == 38:                      # GPS
+            elif new_main_type == 38:                      # GPS
                 if new_sub_type == 49: # V_POSITION
                     self.properties[targetPropertyID] = MySensorsProperty(
                         self,
@@ -985,7 +988,7 @@ class MySensorsDevice(Device):
                         new_value, new_node_id, new_child_id, new_sub_type)
 
 
-            elif child.type == 39:                      # Water quality
+            elif new_main_type == 39:                      # Water quality
                 if new_sub_type == 2: # V_STATUS
                     #self._type.append('SmartPlug')           
                     self.properties[targetPropertyID] = MySensorsProperty(
