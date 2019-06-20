@@ -441,7 +441,7 @@ class MySensorsAdapter(Adapter):
                     dev_port = str(config['USB device name'])
 
                 if self.DEBUG:
-                    print("Selected USB device address: " + str(ip_address))
+                    print("Selected USB device address: " + str(dev_port))
                 self.start_pymysensors_gateway(selected_gateway_type, dev_port, '')
 
             elif selected_gateway_type == 'Ethernet gateway':
