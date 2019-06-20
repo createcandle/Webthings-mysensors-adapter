@@ -35,3 +35,9 @@ Version 0.0.5 improves type support, implements smarter device removal, makes pe
 Version 0.0.6 added a debug option.
 
 Version 0.0.7 fixed an issue where prefered capability to be centrally displayed was forgotton when the add-on restarted. Also removes the persistence option, and replaces it with the option to show a device as connected only after receiving a signal from it.
+
+Version 0.0.8 made reading the configuration more robust, but introduced a bug.
+
+Version 0.0.9 removed that bug, and then turned into:
+
+Version 0.1.0 rewrote how persistence works in an attempt to fix an issue a user was having.
