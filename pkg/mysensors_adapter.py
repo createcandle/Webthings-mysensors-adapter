@@ -49,6 +49,8 @@ class MySensorsAdapter(Adapter):
                     'mysensors-adapter-persistence.json'
                 )
         
+        self.metric = True
+        self.temperature_unit = 'degree celsius'
         self.DEBUG = True
         self.show_connection_status = True
         self.first_request_done = False;
@@ -228,18 +230,12 @@ class MySensorsAdapter(Adapter):
         if self.first_request_done == False:
             self.first_request_done = True
             
-            #try:
-                #self.rt = threading.Thread(target=self.recreate_from_persistence)
-                #self.rt.daemon = True
-                #self.rt.start()
-                #self.recreate_from_persistence() # Recreate everything from the persistence file.
-                #print("------Initiated recreating------")
-                #return
-            #except Exception as ex:
-            #    print("Error while initiating recreate_from_persistence: " + str(ex))
-
-            
-            
+            try:
+                print("self.GATEWAY.metric was set to: " + str(self.GATEWAY.metric))
+                self.GATEWAY.metric = self.metric
+                print("self.GATEWAY.metric is now set to: " + str(self.GATEWAY.metric))
+            except:
+                print("Failed to set the PyMySensors object to metric/fahrenheit.")
             try:
                 self.try_rerequest() # Asks all nodes to present themselves
             except Exception as ex:
@@ -496,16 +492,27 @@ class MySensorsAdapter(Adapter):
                 self.DEBUG = config['Debugging']
             else:
                 self.DEBUG = False
+                
         except:
             print("error loading part 1 of settings")
 
+        # Now that that we know the desired connection status preference, we quickly recreate all devices.
         try:
             self.recreate_from_persistence()
         except Exception as ex:
             print("Error while recreating after start_persistence: " + str(ex))
 
 
-
+        try:
+            if 'Metric' in config:
+                self.metric = bool(config['Metric'])
+                if self.metric == False:
+                    self.temperature_unit = 'degree fahrenheit'
+            else:
+                self.metric = True
+        except:
+            print("Metric/Fahrenheit preference not found.")
+        
         try:
             if 'Gateway' in config:
                 selected_gateway_type = str(config['Gateway'])

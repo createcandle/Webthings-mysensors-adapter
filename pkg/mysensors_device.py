@@ -312,7 +312,7 @@ class MySensorsDevice(Device):
                             '@type': 'TemperatureProperty',
                             'label': new_description,
                             'type': 'number',
-                            'unit': 'degree celsius', # optional for the future:   unit: units === 'imperial' ? 'degree fahrenheit' : 'degree celsius',
+                            'unit': self.adapter.temperature_unit,
                             'readOnly': True,
                         },
                     new_value, new_node_id, new_child_id, new_sub_type)
