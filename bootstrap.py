@@ -44,6 +44,7 @@ try:
     sys.path.append(os.path.join(_BASE_DIR, 'lib'))
 
     import mysensors  # noqa: F401
+    import paho  # noqa: F401
 except ImportError:
     # If installation failed, exit with 100 to tell the gateway not to restart
     # this process.
