@@ -49,9 +49,9 @@ class MySensorsDevice(Device):
         
         self.links = []
         
-        print("name = " + str(self.name))
-        print("title = " + str(self.title))
-        print("as_dict = " + str(self.as_dict()))
+        #print("name = " + str(self.name))
+        #print("title = " + str(self.title))
+        #print("as_dict = " + str(self.as_dict()))
 
 
     def add_child(self, new_description, node_id, child_id, main_type, sub_type, values, value):
@@ -838,6 +838,7 @@ class MySensorsDevice(Device):
                             'maximum':50,
                             'type': 'number',
                             'unit': 'degree celsius',
+                            'multipleOf':0.1,
                         },
                     new_value, new_node_id, new_child_id, new_sub_type)
                 if new_sub_type == 45: # V_HVAC_SETPOINT_HEAT

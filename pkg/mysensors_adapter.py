@@ -10,6 +10,7 @@ import threading
 import serial
 import serial.tools.list_ports as prtlst
 
+import paho.mqtt.client as mqtt # pylint: disable=import-error
 import mysensors.mysensors as mysensors
 
 from time import sleep
@@ -60,6 +61,9 @@ class MySensorsAdapter(Adapter):
         self.show_connection_status = True
         self.first_request_done = False
         self.initial_serial_devices = set()
+        
+        self.MQTT_username = ""
+        self.MQTT_password = ""
         
         try:
             print("Making initial scan of USB ports")
@@ -181,13 +185,37 @@ class MySensorsAdapter(Adapter):
                     protocol_version='2.2')
 
             elif selected_gateway_type == 'MQTT gateway':
-                self.GATEWAY = mysensors.AsyncMQTTGateway(ip_address, event_callback=self.mysensors_message, 
-                    persistence=True, persistence_file=self.persistence_file_path, 
-                    protocol_version='2.2')
+                print("Starting MQTT version, connecting to port 1883 on IP address " + str(ip_address))
+                try:
+                    print("MQTT Creating object")
+                    self.MQTTC = MQTT(ip_address, 1883, 60)
+                    
+                    if self.MQTT_username != '' and self.MQTT_password != '':
+                        print("MQTT will add username and pass")
+                        self.MQTTC.username_pw_set(username=self.MQTT_username,password=self.MQTT_password)
+                        print("-set username and password")
+                    print("MQTT will start")
+                    self.MQTTC.start()
+                except Exception as ex:
+                    print("MQTT object error: " + str(ex))
+                    
                 
-            self.LOOP.run_until_complete(self.GATEWAY.start_persistence())
-            self.LOOP.run_until_complete(self.GATEWAY.start())    
+                #self.GATEWAY = mysensors.AsyncMQTTGateway(ip_address, event_callback=self.mysensors_message, 
+                #    persistence=True, persistence_file=self.persistence_file_path, 
+                #    protocol_version='2.2')
+                
+                try:
+                    self.GATEWAY = mysensors.AsyncMQTTGateway(self.MQTTC.publish, self.MQTTC.subscribe, in_prefix='mygateway1-out',
+                        out_prefix='mygateway1-in', retain=True, event_callback=self.mysensors_message,
+                        persistence=True, persistence_file=self.persistence_file_path, 
+                        protocol_version='2.2')
+                except Exception as ex:
+                    print("AsyncMQTTGateway object error: " + str(ex))
+                
             try:
+                self.LOOP.run_until_complete(self.GATEWAY.start_persistence())
+                self.LOOP.run_until_complete(self.GATEWAY.start())    
+                
                 self.LOOP.run_forever()
             except:
                 print("Asyncio loop is not running")
@@ -217,10 +245,10 @@ class MySensorsAdapter(Adapter):
 
     def remove_thing(self, device_id):
         if self.DEBUG:
-            print("-----REMOVING------")
+            print("-----REMOVING:" + str(device_id))
         
         try:
-            ID_to_clear = int(device_id.split('_')[-1])
+            ID_to_clear = int(device_id.split('-')[-1])
             if self.DEBUG:
                 print("THING TO REMOVE ID:" + str(device_id))
                 print("THING TO REMOVE IN DEVICES DICT:" + str(self.devices[device_id]))
@@ -332,7 +360,7 @@ class MySensorsAdapter(Adapter):
                             print("Node ID not found in persistence file, so cannot re-create device. Please restart the node.")
                             
                         
-
+                        
                     if str(targetDevice) != 'None':
                         #print("targetDevice = " + str(targetDevice))
                         if message.sub_type != 43: # avoid creating a property for V_UNIT_PREFIX
@@ -437,8 +465,6 @@ class MySensorsAdapter(Adapter):
                         
         except Exception as e:
             print("Error getting serial ports list: " + str(e))
-            
-            
 
 
 
@@ -526,8 +552,7 @@ class MySensorsAdapter(Adapter):
             print("Error loading config from database")
             return
         
-        # Fill the variables
-        
+        # Connection status preference
         try:
             if 'Show connection status' in config:
                 print("-Connection status is present in the config data.")
@@ -540,14 +565,16 @@ class MySensorsAdapter(Adapter):
                 
         except:
             print("Error loading part 1 of settings")
-
+            
+        
         # Now that that we know the desired connection status preference, we quickly recreate all devices.
         try:
             self.recreate_from_persistence()
         except Exception as ex:
             print("Error while recreating after start_persistence: " + str(ex))
-
-
+            
+        
+        # Metric or Imperial
         try:
             if 'Metric' in config:
                 self.metric = bool(config['Metric'])
@@ -555,9 +582,21 @@ class MySensorsAdapter(Adapter):
                     self.temperature_unit = 'degree fahrenheit'
             else:
                 self.metric = True
-        except:
-            print("Metric/Fahrenheit preference not found.")
-        
+        except Exception as ex:
+            print("Metric/Fahrenheit preference not found." + str(ex))
+            
+            
+        # MQTT username and password
+        try:
+            if 'MQTT username' in config:
+                self.MQTT_username = str(config['MQTT username'])
+
+            if 'MQTT password' in config:
+                self.MQTT_password = str(config['MQTT password'])
+        except Exception as ex:
+            print("MQTT username and/or password error:" + str(ex))
+            
+            
         try:
             if 'Gateway' in config:
                 selected_gateway_type = str(config['Gateway'])
@@ -565,7 +604,7 @@ class MySensorsAdapter(Adapter):
             else:
                 print("Error: no gateway type selected in add-on settings!")
                 return
-
+            
             
             if selected_gateway_type == 'USB Serial gateway':
                 dev_port = ''
@@ -674,4 +713,44 @@ class MySensorsAdapter(Adapter):
             print("Error while pruning")
         '''
 
- 
+class MQTT(object):
+    """MQTT client example."""
+
+    # pylint: disable=unused-argument
+
+    def __init__(self, broker, port, keepalive):
+        """Setup MQTT client."""
+        print("MQTT object init")
+        self.topics = {}
+        self._mqttc = mqtt.Client()
+        self._mqttc.connect(broker, port, keepalive)
+
+    def publish(self, topic, payload, qos, retain):
+        """Publish an MQTT message."""
+        self._mqttc.publish(topic, payload, qos, retain)
+
+    def subscribe(self, topic, callback, qos):
+        """Subscribe to an MQTT topic."""
+        if topic in self.topics:
+            return
+        
+        def _message_callback(mqttc, userdata, msg):
+            """Callback added to callback list for received message."""
+            callback(msg.topic, msg.payload.decode('utf-8'), msg.qos)
+            
+        self._mqttc.subscribe(topic, qos)
+        self._mqttc.message_callback_add(topic, _message_callback)
+        self.topics[topic] = callback
+
+    def start(self):
+        """Run the MQTT client."""
+        print('Start MQTT client')
+        self._mqttc.loop_start()
+
+    def stop(self):
+        """Stop the MQTT client."""
+        print('Stop MQTT client')
+        self._mqttc.disconnect()
+        self._mqttc.loop_stop()
+
+
