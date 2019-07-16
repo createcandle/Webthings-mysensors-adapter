@@ -7,7 +7,12 @@ import asyncio
 import logging
 import threading
 
+import serial
+import serial.tools.list_ports as prtlst
+
 import mysensors.mysensors as mysensors
+
+from time import sleep
 
 from gateway_addon import Adapter, Database
 from .mysensors_device import MySensorsDevice
@@ -53,7 +58,15 @@ class MySensorsAdapter(Adapter):
         self.temperature_unit = 'degree celsius'
         self.DEBUG = True
         self.show_connection_status = True
-        self.first_request_done = False;
+        self.first_request_done = False
+        self.initial_serial_devices = set()
+        
+        try:
+            print("Making initial scan of USB ports")
+            self.scan_usb_ports()
+        except:
+            print("Error during initial scan of usb ports")
+            
         
         try:
             self.add_from_config()
@@ -91,7 +104,7 @@ class MySensorsAdapter(Adapter):
                             
                         if self.DEBUG:
                             print("")
-                        print("-Recreating: " + name)
+                            print("-Recreating: " + str(name))
                         
                         # We create the device object
                         device = MySensorsDevice(self, nodeIndex, name)
@@ -119,7 +132,7 @@ class MySensorsAdapter(Adapter):
                             #print("Showing device as disconnected. It will be set to 'connected' as soon as it actually makes a connection.")
                             # Create a handle to the new device, and use its notify function.
                             targetDevice = self.get_device("MySensors_" + str(nodeIndex))
-                            if targetDevice != 'None':
+                            if str(targetDevice) != 'None':
                                 targetDevice.connected_notify(False)
                                 if self.DEBUG:
                                     print("-Setting initial device status to not connected.")
@@ -174,7 +187,10 @@ class MySensorsAdapter(Adapter):
                 
             self.LOOP.run_until_complete(self.GATEWAY.start_persistence())
             self.LOOP.run_until_complete(self.GATEWAY.start())    
-            self.LOOP.run_forever()
+            try:
+                self.LOOP.run_forever()
+            except:
+                print("Asyncio loop is not running")
             
             
         except Exception as ex:  # pylint: disable=broad-except
@@ -184,11 +200,15 @@ class MySensorsAdapter(Adapter):
 
     def unload(self):
         print("Shutting down MySensors adapter")
+        
         try:
             self.GATEWAY.stop()
         except:
             print("MySensors adapter was unable to cleanly close PyMySensors object. This is not a problem.")
+            
         try:
+            for task in asyncio.Task.all_tasks():
+                task.cancel()
             self.LOOP.stop()
             self.LOOP.close()
         except:
@@ -250,7 +270,9 @@ class MySensorsAdapter(Adapter):
             if message.node_id != 0:
                 # first we check if the incoming node_id already has already been presented to the WebThings Gateway.
                 try:
-                    targetDevice = self.get_device("MySensors_" + str(message.node_id)) # targetDevice will be 'None' if it wasn't found.
+                    #print("get_devices = " + str(self.get_devices()))
+                    targetDevice = self.get_device("MySensors-" + str(message.node_id)) # targetDevice will be 'None' if it wasn't found.
+                    #print("targetDevice = " + str(targetDevice))
                 except Exception as ex:
                     print("Error while checking if node exists as device: " + str(ex))
                     
@@ -265,8 +287,8 @@ class MySensorsAdapter(Adapter):
 
                             try:
                                 device = MySensorsDevice(self, message.node_id, str(message.payload))
-                                if self.DEBUG:
-                                    self.handle_device_added(device) # This could be removed. Ideally it would only be called after at least one child pas presented itself. On the other hand, it could be useful to show that a device did respond, even if the children couldn't be properly processed.
+                                #if self.DEBUG:
+                                #self.handle_device_added(device) # This could be removed. Ideally it would only be called after at least one child pas presented itself. On the other hand, it could be useful to show that a device did respond, even if the children couldn't be properly processed.
 
                             except Exception as ex:
                                 print("-Failed to add new device from internal presentation: " + str(ex))
@@ -285,9 +307,10 @@ class MySensorsAdapter(Adapter):
                         if self.DEBUG:
                             print("Incoming 'set' message, but device doesn't exist (yet). If possible, will try to quickly create the device using persistence data.") # Perhaps the persistence data can help. Not sure if this situtation is even possible now that persistence is always used.
                         if message.node_id in self.GATEWAY.sensors:
+                            print("message.node_id was in self.GATEWAY.sensors")
                             try:
                                 if str(self.GATEWAY.sensors[message.node_id].sketch_name) == 'None':
-                                    name = 'MySensors_' + str(message.node_id)
+                                    name = 'MySensors-' + str(message.node_id)
                                     if self.DEBUG:
                                         print("-Node was in persistence, but no sketch name found. Generated a generic name.")
                                 else:
@@ -357,27 +380,27 @@ class MySensorsAdapter(Adapter):
                                     # Once the property has been created, we create a handle for it.
                                     targetProperty = targetDevice.find_property(targetPropertyID)
                                     #device.connected_notify(False)
-
+                                    
                                 except Exception as ex:
                                     if self.DEBUG:
                                         print("-Error adding property: " + str(ex))
                                     del self.GATEWAY.sensors[message.node_id].children[message.child_id] # Maybe delete the entire node? Start fresh?
                                     if self.DEBUG:
                                         print("-Removed faulty node child from persistence data")
-
-
+                                        
+                                        
                             # The property has already been created, so just update its value.    
                             if str(targetProperty) != 'None':
                                 if self.DEBUG:
                                     #pass
                                     print("-About to update: " + str(targetPropertyID))
-
+                                    
                                 try:
                                     if is_a_number(message.payload):
                                         new_value = get_int_or_float(message.payload)
                                     else:
                                         new_value = str(message.payload)
-
+                                        
                                     #print("New update value:" + str(new_value))
                                     targetProperty = targetDevice.find_property(targetPropertyID)
                                     #print("Target property object: " + str(targetProperty))
@@ -388,13 +411,34 @@ class MySensorsAdapter(Adapter):
                                         print("-Adapter has updated the property")
                                 except Exception as ex:
                                     print("Update property error: " + str(ex))
-
+                                    
                         if targetDevice.connected == False:
                             targetDevice.connected = True
                             targetDevice.connected_notify(True)
                                     
         except Exception as ex:
             print("-Failed to handle message:" + str(ex))
+
+
+
+    def scan_usb_ports(self): # Scans for USB serial devices
+        initial_serial_devices = set()
+        result = {"state":"stable","port_id":[]}
+        
+        try:    
+            ports = prtlst.comports()
+            for port in ports:
+                if 'USB' in port[1]: #check 'USB' string in device description
+                    #if self.DEBUG:
+                    #    print("port: " + str(port[0]))
+                    #    print("usb device description: " + str(port[1]))
+                    if str(port[0]) not in self.initial_serial_devices:
+                        self.initial_serial_devices.add(str(port[0]))
+                        
+        except Exception as e:
+            print("Error getting serial ports list: " + str(e))
+            
+            
 
 
 
@@ -428,7 +472,7 @@ class MySensorsAdapter(Adapter):
         if self.DEBUG:
             print("Re-requesting presentation of all nodes on the network")
         try:
-            #self.GATEWAY.send('0;255;3;0;26;0\n') # Ask all nodes within earshot to respond with their node ID's.
+            self.GATEWAY.send('0;255;3;0;26;0\n') # Ask all nodes within earshot to respond with their node ID's.
                 
             # this asks all known devices to re-present themselves. In a future version this request could only be made to nodes where a device property count is lower than expected.
             for index in self.GATEWAY.sensors: #, sensor
@@ -441,6 +485,7 @@ class MySensorsAdapter(Adapter):
                     
         except:
             print("error while manually re-requesting presentations")
+
 
 
     def start_pairing(self, timeout):
@@ -494,7 +539,7 @@ class MySensorsAdapter(Adapter):
                 self.DEBUG = False
                 
         except:
-            print("error loading part 1 of settings")
+            print("Error loading part 1 of settings")
 
         # Now that that we know the desired connection status preference, we quickly recreate all devices.
         try:
@@ -519,22 +564,63 @@ class MySensorsAdapter(Adapter):
                 print("-Gateway choice: " + selected_gateway_type)
             else:
                 print("Error: no gateway type selected in add-on settings!")
+                return
 
-            # Select the desired PyMySensors type
+            
             if selected_gateway_type == 'USB Serial gateway':
-
+                dev_port = ''
                 if 'USB device name' not in config or str(config['USB device name']) == '':
-                    print("USB gateway selected, but no device name selected. Using default (/dev/ttyUSB0)")
-                    dev_port = '/dev/ttyUSB0'
-                else:
+                    if self.DEBUG:
+                        print("Port ID was empty, initiating scan of USB serial ports")
+                    try:
+                        if len(self.initial_serial_devices) == 1:
+                            #dev_port = str(self.initial_serial_devices[0])
+                            dev_port = next(iter(self.initial_serial_devices))
+                            print("Only one serial device found, it's on port " + str(dev_port))
+                        elif len(self.initial_serial_devices) > 1:
+                            for port_id in self.initial_serial_devices:
+                                if self.DEBUG:
+                                    print("Scanning port: = " + str(port_id))
+                                current_serial_object = serial.Serial(str(port_id), 115200, timeout=1)
+                                timeout_counter = 100
+                                while( timeout_counter > 0):     # Wait at most 10 seconds for data from the serial port
+                                    timeout_counter -= 1
+                                    sleep(.1)
+                                    if int(current_serial_object.inWaiting()) > 0:
+                                        timeout_counter = 0
+                                    #print(str(timeout_counter))
+                                
+                                if current_serial_object.inWaiting() > 0:   # If serial data is available, check the first line to see if it is the MySensors gateway device.
+                                    ser_bytes = current_serial_object.readline()
+                                    decoded_bytes = ser_bytes.decode("utf-8") # Use ASCII decode instead?
+                                    if self.DEBUG:
+                                        print("Serial data reveived: " + str(decoded_bytes))
+                                    if "Gateway startup complete" in decoded_bytes:
+                                        print("After a scan the serial gateway device was found on port " + str(port_id))
+                                        dev_port = str(port_id)
+                                        current_serial_object.close()
+                                        break
+                                else:
+                                    print("The connected serial device did not have any data available. Are you sure it's a MySensors gateway?")
+                                current_serial_object.close()
+                                
+                    except Exception as ex:
+                        print("Tried to find serial port, but there was an error: " + str(ex))
+                        
+                    if dev_port == '':
+                        print("Using fallback port /dev/ttyUSB0")
+                        dev_port = '/dev/ttyUSB0'
+                
+                elif str(config['USB device name']) != '':
                     dev_port = str(config['USB device name'])
-
-                if self.DEBUG:
-                    print("Selected USB device address: " + str(dev_port))
+                    print("USB gateway selected, and custom port id provided: " + str(dev_port))
+                    if dev_port not in self.initial_serial_devices:
+                        print("Warning, no actual USB device found at specified serial port")
+                
                 self.start_pymysensors_gateway(selected_gateway_type, dev_port, '')
-
+                
             elif selected_gateway_type == 'Ethernet gateway':
-
+                
                 if 'IP address' not in config or str(config['IP address']) == '':
                     ip_address = '127.0.0.1:5003'
                 else:
@@ -543,9 +629,9 @@ class MySensorsAdapter(Adapter):
                 if self.DEBUG:
                     print("Selected IP address and port: " + str(ip_address))
                 self.start_pymysensors_gateway(selected_gateway_type, '', ip_address)
-
+                
             elif selected_gateway_type == 'MQTT gateway':
-
+                
                 if 'IP address' not in config or str(config['IP address']) == '':
                     ip_address = '127.0.0.1'
                 else:
@@ -556,7 +642,7 @@ class MySensorsAdapter(Adapter):
                 self.start_pymysensors_gateway(selected_gateway_type, '', ip_address)
 
             if self.DEBUG:
-                print("MySensors add-on has succesfully loaded the configuration.")
+                print("Bye")
         except Exception as ex:
             print("Error extracting settings from config object: " + str(ex))
         return

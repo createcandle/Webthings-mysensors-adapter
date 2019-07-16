@@ -25,29 +25,39 @@ class MySensorsDevice(Device):
         """
         
         #self._id = "MySensors_" + str(_id)
-        self._id = 'MySensors-{}'.format(_id)
+        self._id = 'MySensors-{}'.format(_id)   # was self._id = 'MySensors-{}'.format(_id)
+        #self.links = []
+        #self.name = str(sketch_name)
+        #self.title = str(sketch_name)
+        #self.description = str(sketch_name)
         
-        #print("Device init: " + str(node.sketch_name))
+        print("Device init, sketch name: " + str(sketch_name))
+        print("_id: " + str(_id))
         Device.__init__(self, adapter, _id)
         
         self.adapter = adapter
-        self.id = "MySensors_" + str(_id)
+        self.id = self._id #"MySensors-" + str(_id)
         #self._id = str(_id)
-        self.name = sketch_name
-        self.description = sketch_name
+        self.name = str(sketch_name)
+        self.title = str(sketch_name)
+        self.description = str(sketch_name)
+        
         self._type = [] # TODO: isn't this deprecated?
         self.properties = {}
         #print("device self.properties at init: " + str(self.properties))
         self.connected = False # Will be set to true once we receive an actual message from the node. # TODO: is this still used?
-
+        
+        self.links = []
+        
+        print("name = " + str(self.name))
+        print("title = " + str(self.title))
+        print("as_dict = " + str(self.as_dict()))
 
 
     def add_child(self, new_description, node_id, child_id, main_type, sub_type, values, value):
         #print()
         print("+ DEVICE.ADD_CHILD with child_id: " + str(child_id))
         
-
-
         # PREFIX
         # First, let's see if there's a prefix. If there is, we should scrape it from the child's value object
         prefix = '' # prefix starts as an empty string.
@@ -69,7 +79,7 @@ class MySensorsDevice(Device):
                     value_counter += 1
                     if childSubType == sub_type and value_counter > 1:
                         if self.adapter.DEBUG:
-                            print("-Found multiple properties with potentially the potential same name")
+                            print("-Found multiple properties with potentially same name")
                         decription_addendum = ' ' + str(value_counter)
                         
             new_description = new_description + decription_addendum # this adds a number at the end of the property if there would be more than one with the same name.
@@ -277,6 +287,7 @@ class MySensorsDevice(Device):
                             'step': 1,
                             'type': 'integer',
                             'unit': 'percent',
+                            'multipleOf':1,
                         },
                         new_value, new_node_id, new_child_id, new_sub_type)
                 if new_sub_type == 30: # V_DOWN
@@ -314,12 +325,13 @@ class MySensorsDevice(Device):
                             'type': 'number',
                             'unit': self.adapter.temperature_unit,
                             'readOnly': True,
+                            'multipleOf':0.1,
                         },
                     new_value, new_node_id, new_child_id, new_sub_type)
 
 
             elif new_main_type == 7:                       # Humidity
-                if new_sub_type == 1: # V_HUM
+                if new_sub_type == 1 or new_sub_type == 37: # V_HUM
                     self._type.append('MultiLevelSensor')
                     self.properties[targetPropertyID] = MySensorsProperty(
                         self,
@@ -329,9 +341,10 @@ class MySensorsDevice(Device):
                             'label': new_description,
                             'minimum': 0,
                             'maximum': 100,
-                            'type': 'number',
+                            'type': 'integer',
                             'unit': 'percent',
                             'readOnly': True,
+                            'multipleOf':1,
                         },
                         new_value, new_node_id, new_child_id, new_sub_type)
 
@@ -350,6 +363,7 @@ class MySensorsDevice(Device):
                             'type': 'number',
                             'unit': 'hPa',
                             'readOnly': True,
+                            'multipleOf':1,
                         },
                         new_value, new_node_id, new_child_id, new_sub_type)
                 if new_sub_type == 5: # V_FORECAST (weather prediction)
@@ -373,6 +387,7 @@ class MySensorsDevice(Device):
                             'label': new_description,
                             'type': 'number',
                             'readOnly': True,
+                            'multipleOf':0.1,
                         },
                         new_value, new_node_id, new_child_id, new_sub_type)
                 if new_sub_type == 10: # V_DIRECTION (of wind)
@@ -396,6 +411,7 @@ class MySensorsDevice(Device):
                             'label': new_description,
                             'type': 'number',
                             'readOnly': True,
+                            'multipleOf':0.1,
                         },
                         new_value, new_node_id, new_child_id, new_sub_type)
                 if new_sub_type == 7: # V_RAINRATE
@@ -406,6 +422,7 @@ class MySensorsDevice(Device):
                             'label': new_description,
                             'type': 'number',
                             'readOnly': True,
+                            'multipleOf':0.1,
                         },
                         new_value, new_node_id, new_child_id, new_sub_type)
 
@@ -419,6 +436,7 @@ class MySensorsDevice(Device):
                             'label': new_description,
                             'type': 'number',
                             'readOnly': True,
+                            'multipleOf':0.1,
                         },
                         new_value, new_node_id, new_child_id, new_sub_type)
 
@@ -432,6 +450,7 @@ class MySensorsDevice(Device):
                             'label': new_description,
                             'type': 'number',
                             'readOnly': True,
+                            'multipleOf':0.01,
                         },
                         new_value, new_node_id, new_child_id, new_sub_type)
 
@@ -446,6 +465,7 @@ class MySensorsDevice(Device):
                             'type': 'number',
                             'unit': 'watt',
                             'readOnly': True,
+                            'multipleOf':0.01,
                         },
                         new_value, new_node_id, new_child_id, new_sub_type)
 
@@ -463,6 +483,7 @@ class MySensorsDevice(Device):
                             'type': 'number',
                             'unit': 'degree celsius',
                             'readOnly': True,
+                            'multipleOf':0.1,
                         },
                     new_value, new_node_id, new_child_id, new_sub_type)
                 if new_sub_type == 45: # V_HVAC_SETPOINT_HEAT
@@ -477,6 +498,7 @@ class MySensorsDevice(Device):
                             'maximum':150,
                             'type': 'number',
                             'unit': 'degree celsius',
+                            'multipleOf':0.1,
                         },
                     new_value, new_node_id, new_child_id, new_sub_type)
                 if new_sub_type == 21: # V_HVAC_FLOW_STATE
@@ -537,6 +559,7 @@ class MySensorsDevice(Device):
                                 'type': 'number',
                                 'unit': prefix,
                                 'readOnly': True,
+                                'multipleOf':0.01,
                             },
                             new_value, new_node_id, new_child_id, new_sub_type)
                     else:
@@ -547,6 +570,7 @@ class MySensorsDevice(Device):
                                 'label': new_description,
                                 'type': 'number',
                                 'readOnly': True,
+                                'multipleOf':0.01,
                             },
                             new_value, new_node_id, new_child_id, new_sub_type)
 
@@ -563,6 +587,7 @@ class MySensorsDevice(Device):
                             'step': 1,
                             'type': 'integer',
                             'unit': 'percent',
+                            'multipleOf':1,
                         },
                         new_value, new_node_id, new_child_id, new_sub_type)
                 if new_sub_type == 37: #V_LEVEL
@@ -571,9 +596,10 @@ class MySensorsDevice(Device):
                         targetPropertyID,
                         {
                             'label': new_description,
-                            'type': 'number',
+                            'type': 'integer',
                             'unit': 'Lux',
                             'readOnly': True,
+                            'multipleOf':1,
                         },
                         new_value, new_node_id, new_child_id, new_sub_type)
 
@@ -611,6 +637,7 @@ class MySensorsDevice(Device):
                             'label': new_description,
                             'type': 'number',
                             'readOnly': True,
+                            'multipleOf':0.01,
                         },
                         new_value, new_node_id, new_child_id, new_sub_type)
 
@@ -626,6 +653,7 @@ class MySensorsDevice(Device):
                                 'type': 'number',
                                 'unit': prefix,
                                 'readOnly': True,
+                                'multipleOf':0.1,
                             },
                             new_value, new_node_id, new_child_id, new_sub_type)
                     else:
@@ -636,6 +664,7 @@ class MySensorsDevice(Device):
                                 'label': new_description,
                                 'type': 'number',
                                 'readOnly': True,
+                                'multipleOf':0.1,
                             },
                             new_value, new_node_id, new_child_id, new_sub_type)
 
@@ -649,6 +678,7 @@ class MySensorsDevice(Device):
                             'label': new_description,
                             'type': 'number',
                             'readOnly': True,
+                            'multipleOf':0.01,
                         },
                         new_value, new_node_id, new_child_id, new_sub_type)
 
@@ -664,6 +694,7 @@ class MySensorsDevice(Device):
                                 'type': 'number',
                                 'unit': prefix,
                                 'readOnly': True,
+                                'multipleOf':0.1,
                             },
                             new_value, new_node_id, new_child_id, new_sub_type)
                     else:
@@ -674,6 +705,7 @@ class MySensorsDevice(Device):
                                 'label': new_description,
                                 'type': 'number',
                                 'readOnly': True,
+                                'multipleOf':0.1,
                             },
                             new_value, new_node_id, new_child_id, new_sub_type)
 
@@ -719,6 +751,7 @@ class MySensorsDevice(Device):
                             'step': 1,
                             'type': 'integer',
                             'unit': 'percent',
+                            'multipleOf':1,
                         },
                         new_value, new_node_id, new_child_id, new_sub_type)
 
@@ -819,6 +852,7 @@ class MySensorsDevice(Device):
                             'maximum':150,
                             'type': 'number',
                             'unit': 'degree celsius',
+                            'multipleOf':0.1,
                         },
                     new_value, new_node_id, new_child_id, new_sub_type)
 
@@ -834,6 +868,7 @@ class MySensorsDevice(Device):
                         'type': 'number',
                         'unit': 'volt',
                         'readOnly': True,
+                        'multipleOf':0.01,
                     },
                     new_value, new_node_id, new_child_id, new_sub_type)
 
@@ -897,6 +932,7 @@ class MySensorsDevice(Device):
                         'label': new_description,
                         'type': 'number',
                         'readOnly': True,
+                        'multipleOf':0.1,
                     },
                     new_value, new_node_id, new_child_id, new_sub_type)
 
@@ -922,8 +958,9 @@ class MySensorsDevice(Device):
                         targetPropertyID,
                         {
                             'label': new_description,
-                            'type': 'number',
+                            'type': 'integer',
                             'readOnly': True,
+                            'multipleOf':1,
                         },
                         new_value, new_node_id, new_child_id, new_sub_type)
                 if new_sub_type == 15: # V_ARMED
@@ -972,6 +1009,7 @@ class MySensorsDevice(Device):
                             'label': new_description,
                             'type': 'number',
                             'readOnly': True,
+                            'multipleOf':0.01,
                         },
                         new_value, new_node_id, new_child_id, new_sub_type)
 
@@ -1011,6 +1049,7 @@ class MySensorsDevice(Device):
                             'type': 'number',
                             'unit': 'degree celsius',
                             'readOnly': True,
+                            'multipleOf':0.1,
                         },
                     new_value, new_node_id, new_child_id, new_sub_type)
                 if new_sub_type == 51 or new_sub_type == 52 or new_sub_type == 53: # V_PH, V_ORP, V_EC
@@ -1051,7 +1090,60 @@ class MySensorsDevice(Device):
             print("Notify after adding property ERROR: " + str(ex))
  
 
-            
-        
+    def as_dict(self):
+        """
+        Get the device state as a dictionary.
+        Returns the state as a dictionary.
+        """
+        properties = {k: v.as_dict() for k, v in self.properties.items()}
 
-    
+        if hasattr(self, 'name') and not self.title:
+            self.title = self.name
+
+        return {
+            'id': self.id,
+            'title': self.title,
+            'type': self.type,
+            '@context': self._context,
+            '@type': self._type,
+            'description': self.description,
+            'properties': properties,
+            'actions': self.actions,
+            'events': self.events,
+            'links': self.links,
+            'baseHref': self.base_href,
+            'pin': {
+                'required': self.pin_required,
+                'pattern': self.pin_pattern,
+            },
+            'credentialsRequired': self.credentials_required,
+        }
+
+    def as_thing(self):
+        """
+        Return the device state as a Thing Description.
+        Returns the state as a dictionary.
+        """
+        if hasattr(self, 'name') and not self.title:
+            self.title = self.name
+
+        thing = {
+            'id': self.id,
+            'title': self.title,
+            'type': self.type,
+            '@context': self._context,
+            '@type': self._type,
+            'properties': self.get_property_descriptions(),
+            'links': self.links,
+            'baseHref': self.base_href,
+            'pin': {
+                'required': self.pin_required,
+                'pattern': self.pin_regex,
+            },
+            'credentialsRequired': self.credentials_required,
+        }
+
+        if self.description:
+            thing['description'] = self.description
+
+        return thing
