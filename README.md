@@ -41,3 +41,7 @@ Version 0.0.8 made reading the configuration more robust, but introduced a bug.
 Version 0.0.9 removed that bug, and then turned into:
 
 Version 0.1.0 rewrote how persistence works in an attempt to fix an issue a user was having.
+
+Version 0.1.1 tried to anticipate small changes in the upcoming version (0.9) of the WebThings gateway.
+
+Version 0.1.2 added automatic serial port searching, and implemented support for multipleOf. The latter should help show a sane amount of decimals on numeric variables.
