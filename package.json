@@ -1,7 +1,7 @@
 {
   "name": "mysensors-adapter",
   "display_name": "MySensors",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "description": "MySensors add-on for Mozilla WebThings Gateway",
   "author": "CreateCandle",
   "main": "bootstrap.py",
@@ -43,8 +43,9 @@
     "exec": "python3 {path}/bootstrap.py",
     "config": {
       "Gateway": "USB Serial gateway",
-      "USB device name": "/dev/ttyUSB0",
+      "USB device name": "",
       "IP address": "127.0.0.1",
+      "Metric": true,
       "Show connection status": true,
       "Debugging": false
     },
@@ -53,6 +54,7 @@
       "required": [
         "Gateway",
         "Show connection status",
+        "Metric",
         "Debugging"
       ],
       "properties": {
@@ -67,19 +69,23 @@
         },
         "USB device name": {
           "type": "string",
-          "description": "If you are using a USB connected gateway, what is the technical name of the USB device? You can try '/dev/ttyUSB0' or '/dev/ttyACM0'."
+          "description": "If you leave this empty, the add-on will automatically search for a connceted MySensors gateway device. If you want you can manually override this proces by providing a serial port name here. On a Linux device this would be something like '/dev/ttyUSB0'."
         },
         "IP address": {
           "type": "string",
           "description": "If you are using an ethernet gateway, what is its IP address? You can try '127.0.0.1' if it's installed on the same computer as the Mozilla WebThings gateway."
         },
-        "Show connection status": {
+        "Metric": {
           "type": "boolean",
-          "description": "Enabling this will only show your node as connected once an actual sign of life has been received from the device."
+          "description": "Check the box to request metric units from the devices. Uncheck it to request they send data in imperial units instead."
+        },
+          "Show connection status": {
+          "type": "boolean",
+          "description": "Enabling this will show your things as disconnected (slightly transparent) until an actual sign of life has been received from the device."
         },
         "Debugging": {
           "type": "boolean",
-          "description": "If you are having issues with the add-on, enabling this will result in a lot more debug data in the WebThings' internal log (which can be found under settings -> development)."
+          "description": "If you are having issues with the add-on, enabling this will result in a lot more debug data in the WebThings' internal log (which can be found under settings -> developer -> view internal logs)."
         }
       }
     }
