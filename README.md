@@ -44,4 +44,7 @@ Version 0.1.0 rewrote how persistence works in an attempt to fix an issue a user
 
 Version 0.1.1 tried to anticipate small changes in the upcoming version (0.9) of the WebThings gateway.
 
-Version 0.1.2 added automatic serial port searching, and implemented support for multipleOf. The latter should help show a sane amount of decimals on numeric variables.
+Version 0.1.2 added 
+- Automatic serial port searching. User doesn't need to add a serial port ID manually anymore (but can if they want)
+- Support for multipleOf. This should help show a sane amount of decimals on numeric variables.
+- Experimental MQTT support based on user feedback
