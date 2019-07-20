@@ -43,10 +43,12 @@
     "exec": "python3 {path}/bootstrap.py",
     "config": {
       "Gateway": "USB Serial gateway",
-      "USB device name": "",
-      "IP address": "127.0.0.1",
       "Metric": true,
       "Show connection status": true,
+      "USB device name": "",
+      "IP address": "",
+      "MQTT username": "",
+      "MQTT password": "",
       "Debugging": false
     },
     "schema": {
@@ -67,14 +69,6 @@
           ],
           "description": "How are you talking to the MySensors network? Via a USB device is most common."
         },
-        "USB device name": {
-          "type": "string",
-          "description": "If you leave this empty, the add-on will automatically search for a connceted MySensors gateway device. If you want you can manually override this proces by providing a serial port name here. On a Linux device this would be something like '/dev/ttyUSB0'."
-        },
-        "IP address": {
-          "type": "string",
-          "description": "If you are using an ethernet gateway, what is its IP address? You can try '127.0.0.1' if it's installed on the same computer as the Mozilla WebThings gateway."
-        },
         "Metric": {
           "type": "boolean",
           "description": "Check the box to request metric units from the devices. Uncheck it to request they send data in imperial units instead."
@@ -83,9 +77,25 @@
           "type": "boolean",
           "description": "Enabling this will show your things as disconnected (slightly transparent) until an actual sign of life has been received from the device."
         },
+        "USB device name": {
+          "type": "string",
+          "description": "If you leave this empty, the add-on will automatically search for a connceted MySensors gateway device. If you want you can manually override this proces by providing a serial port name here. On a Linux device this would be something like '/dev/ttyUSB0'."
+        },
+        "IP address": {
+          "type": "string",
+          "description": "If you are using an ethernet gateway or MQTT server, what is its IP address? You can try 127.0.0.1 if it's installed on the same computer as the Mozilla WebThings gateway."
+        },
+        "MQTT username": {
+          "type": "string",
+          "description": "The username for MQTT security."
+        },
+        "MQTT password": {
+          "type": "string",
+          "description": "The password for MQTT security."
+        },
         "Debugging": {
           "type": "boolean",
-          "description": "If you are having issues with the add-on, enabling this will result in a lot more debug data in the WebThings' internal log (which can be found under settings -> developer -> view internal logs)."
+          "description": "Debugging allows you to diagnose any issues with the add-on. If enabled it will result in a lot more debug data in the internal log (which can be found under settings -> developer -> view internal logs)."
         }
       }
     }
