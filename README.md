@@ -48,3 +48,4 @@ Version 0.1.2 added
 - Automatic serial port searching. User doesn't need to add a serial port ID manually anymore (but can if they want)
 - Support for multipleOf. This should help show a sane amount of decimals on numeric variables.
 - Experimental MQTT support based on user feedback
+- Anticipates switch to version 0.9 of the WebThings gateway by implementing title support.
