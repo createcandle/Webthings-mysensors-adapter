@@ -31,8 +31,8 @@ class MySensorsDevice(Device):
         #self.title = str(sketch_name)
         #self.description = str(sketch_name)
         
-        print("Device init, sketch name: " + str(sketch_name))
-        print("_id: " + str(_id))
+        print("Device init, id number: " + str(_id) + ", sketch name: " + str(sketch_name))
+        #print("_id: " + str(_id))
         Device.__init__(self, adapter, _id)
         
         self.adapter = adapter
@@ -56,7 +56,7 @@ class MySensorsDevice(Device):
 
     def add_child(self, new_description, node_id, child_id, main_type, sub_type, values, value):
         #print()
-        print("+ DEVICE.ADD_CHILD with child_id: " + str(child_id))
+        print("+ Creating a property from child " + str(child_id))
         
         # PREFIX
         # First, let's see if there's a prefix. If there is, we should scrape it from the child's value object
@@ -79,7 +79,7 @@ class MySensorsDevice(Device):
                     value_counter += 1
                     if childSubType == sub_type and value_counter > 1:
                         if self.adapter.DEBUG:
-                            print("-Found multiple properties with potentially same name")
+                            print("-Found multiple properties with potentially the same name")
                         decription_addendum = ' ' + str(value_counter)
                         
             new_description = new_description + decription_addendum # this adds a number at the end of the property if there would be more than one with the same name.
@@ -118,7 +118,7 @@ class MySensorsDevice(Device):
             
 
             if targetPropertyID in self.properties:
-                print("Device; ERROR - property already exists?")
+                print("Device; ERROR - property already seems to exist")
                 return
 
 
@@ -1090,61 +1090,3 @@ class MySensorsDevice(Device):
         except Exception as ex:
             print("Notify after adding property ERROR: " + str(ex))
  
-
-    def as_dict(self):
-        """
-        Get the device state as a dictionary.
-        Returns the state as a dictionary.
-        """
-        properties = {k: v.as_dict() for k, v in self.properties.items()}
-
-        if hasattr(self, 'name') and not self.title:
-            self.title = self.name
-
-        return {
-            'id': self.id,
-            'title': self.title,
-            'type': self.type,
-            '@context': self._context,
-            '@type': self._type,
-            'description': self.description,
-            'properties': properties,
-            'actions': self.actions,
-            'events': self.events,
-            'links': self.links,
-            'baseHref': self.base_href,
-            'pin': {
-                'required': self.pin_required,
-                'pattern': self.pin_pattern,
-            },
-            'credentialsRequired': self.credentials_required,
-        }
-
-    def as_thing(self):
-        """
-        Return the device state as a Thing Description.
-        Returns the state as a dictionary.
-        """
-        if hasattr(self, 'name') and not self.title:
-            self.title = self.name
-
-        thing = {
-            'id': self.id,
-            'title': self.title,
-            'type': self.type,
-            '@context': self._context,
-            '@type': self._type,
-            'properties': self.get_property_descriptions(),
-            'links': self.links,
-            'baseHref': self.base_href,
-            'pin': {
-                'required': self.pin_required,
-                'pattern': self.pin_regex,
-            },
-            'credentialsRequired': self.credentials_required,
-        }
-
-        if self.description:
-            thing['description'] = self.description
-
-        return thing

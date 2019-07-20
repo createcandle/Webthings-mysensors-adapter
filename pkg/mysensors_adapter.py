@@ -1,7 +1,7 @@
 """MySensors adapter for Mozilla WebThings Gateway."""
 
 import os
-import time
+
 import json
 import asyncio
 import logging
@@ -13,6 +13,7 @@ import serial.tools.list_ports as prtlst
 import paho.mqtt.client as mqtt # pylint: disable=import-error
 import mysensors.mysensors as mysensors
 
+import time
 from time import sleep
 
 from gateway_addon import Adapter, Database
@@ -126,29 +127,37 @@ class MySensorsAdapter(Adapter):
                         # Finally, now that the device is complete, we present it to the Gateway.
                         self.handle_device_added(device)
                         
+                        # Optionally, set the initial connection status to 'not connected'.
+                        try:
+                            #print("self.show_connection_status = " + str(self.show_connection_status))
+                            if self.show_connection_status == True:
+                                print("Showing device as disconnected. It will be set to 'connected' as soon as it actually makes a connection.")
+                                # Create a handle to the new device, and use its notify function.
+                                targetDevice = self.get_device("MySensors_" + str(nodeIndex))
+                                if str(targetDevice) != 'None':
+                                    targetDevice.connected_notify(False)
+                                    if self.DEBUG:
+                                        print("-Setting initial device status to not connected.")
+                            else:
+                                print("Not changing connection status")
+                        except Exception as ex:
+                            print("Failed to set initial connection status to false: " + str(ex))
+
+
+
+
+
+
                     except Exception as ex:
                         print("Error during recreation of thing from persistence: " + str(ex))
                         
-                    # Optionally, set the initial connection status to 'not connected'.
-                    try:
-                        #print("self.show_connection_status = " + str(self.show_connection_status))
-                        if self.show_connection_status == True:
-                            #print("Showing device as disconnected. It will be set to 'connected' as soon as it actually makes a connection.")
-                            # Create a handle to the new device, and use its notify function.
-                            targetDevice = self.get_device("MySensors_" + str(nodeIndex))
-                            if str(targetDevice) != 'None':
-                                targetDevice.connected_notify(False)
-                                if self.DEBUG:
-                                    print("-Setting initial device status to not connected.")
-                        else:
-                            print("Not changing connection status")
-                    except Exception as ex:
-                        print("Failed to set initial connection status to false: " + str(ex))
+
 
         except Exception as ex:
             print("Error during recreation from persistence: " + str(ex))
 
-
+        print("End of recreation function")
+        return
 
 
 
@@ -187,14 +196,13 @@ class MySensorsAdapter(Adapter):
             elif selected_gateway_type == 'MQTT gateway':
                 print("Starting MQTT version, connecting to port 1883 on IP address " + str(ip_address))
                 try:
-                    print("MQTT Creating object")
+                    #print("MQTT Creating object")
                     self.MQTTC = MQTT(ip_address, 1883, 60)
                     
                     if self.MQTT_username != '' and self.MQTT_password != '':
-                        print("MQTT will add username and pass")
                         self.MQTTC.username_pw_set(username=self.MQTT_username,password=self.MQTT_password)
-                        print("-set username and password")
-                    print("MQTT will start")
+                        print("-set MQTT username and password")
+                    #print("MQTT will start")
                     self.MQTTC.start()
                 except Exception as ex:
                     print("MQTT object error: " + str(ex))
@@ -507,7 +515,8 @@ class MySensorsAdapter(Adapter):
                         print("<< Requesting presentation from " + str(index))
                     discover_encoded_message = str(index) + ';255;3;0;19;\n'
                     self.GATEWAY.send(discover_encoded_message)
-                    time.sleep(1)
+                    #time.sleep(1)
+                    sleep(1)
                     
         except:
             print("error while manually re-requesting presentations")
@@ -560,6 +569,7 @@ class MySensorsAdapter(Adapter):
                 
             if 'Debugging' in config:
                 self.DEBUG = config['Debugging']
+                print("Debugging enabled")
             else:
                 self.DEBUG = False
                 
@@ -567,12 +577,6 @@ class MySensorsAdapter(Adapter):
             print("Error loading part 1 of settings")
             
         
-        # Now that that we know the desired connection status preference, we quickly recreate all devices.
-        try:
-            self.recreate_from_persistence()
-        except Exception as ex:
-            print("Error while recreating after start_persistence: " + str(ex))
-            
         
         # Metric or Imperial
         try:
@@ -590,11 +594,23 @@ class MySensorsAdapter(Adapter):
         try:
             if 'MQTT username' in config:
                 self.MQTT_username = str(config['MQTT username'])
+            else:
+                print("No MQTT username set")
 
             if 'MQTT password' in config:
                 self.MQTT_password = str(config['MQTT password'])
+            else:
+                print("No MQTT password set")
+                
         except Exception as ex:
             print("MQTT username and/or password error:" + str(ex))
+            
+            
+        # Now that that we know the desired connection status preference, we quickly recreate all devices.
+        try:
+            self.recreate_from_persistence()
+        except Exception as ex:
+            print("Error while recreating after start_persistence: " + str(ex))
             
             
         try:
@@ -624,6 +640,7 @@ class MySensorsAdapter(Adapter):
                                 timeout_counter = 100
                                 while( timeout_counter > 0):     # Wait at most 10 seconds for data from the serial port
                                     timeout_counter -= 1
+                                    #time.sleep(.1)
                                     sleep(.1)
                                     if int(current_serial_object.inWaiting()) > 0:
                                         timeout_counter = 0
@@ -731,11 +748,14 @@ class MQTT(object):
 
     def subscribe(self, topic, callback, qos):
         """Subscribe to an MQTT topic."""
+        print("subscribing to topic " + str(topic))
         if topic in self.topics:
+            print("already subscribed")
             return
         
         def _message_callback(mqttc, userdata, msg):
             """Callback added to callback list for received message."""
+            #print("calling callback")
             callback(msg.topic, msg.payload.decode('utf-8'), msg.qos)
             
         self._mqttc.subscribe(topic, qos)
@@ -744,8 +764,8 @@ class MQTT(object):
 
     def start(self):
         """Run the MQTT client."""
-        print('Start MQTT client')
         self._mqttc.loop_start()
+        print("Started MQTT client")
 
     def stop(self):
         """Stop the MQTT client."""
