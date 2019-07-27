@@ -163,6 +163,7 @@ class MySensorsDevice(Device):
                             '@type': 'MotionProperty',
                             'label': new_description,
                             'type': 'boolean',
+                            'readOnly': True,
                         },
                         new_value, new_node_id, new_child_id, new_sub_type)
                 if new_sub_type == 15: # V_ARMED
@@ -188,6 +189,7 @@ class MySensorsDevice(Device):
                             '@type': 'AlarmProperty',
                             'label': new_description,
                             'type': 'boolean',
+                            'readOnly': True,
                         },
                         new_value, new_node_id, new_child_id, new_sub_type)
                 if new_sub_type == 15: # V_ARMED
@@ -341,10 +343,10 @@ class MySensorsDevice(Device):
                             'label': new_description,
                             'minimum': 0,
                             'maximum': 100,
-                            'type': 'integer',
+                            'type': 'number',
                             'unit': 'percent',
                             'readOnly': True,
-                            'multipleOf':1,
+                            'multipleOf':.1,
                         },
                         new_value, new_node_id, new_child_id, new_sub_type)
 
@@ -920,6 +922,7 @@ class MySensorsDevice(Device):
                             '@type': 'LeakProperty',
                             'label': new_description,
                             'type': 'boolean',
+                            'readOnly': True,
                         },
                         new_value, new_node_id, new_child_id, new_sub_type)
 
@@ -961,7 +964,7 @@ class MySensorsDevice(Device):
                             'label': new_description,
                             'type': 'integer',
                             'readOnly': True,
-                            'multipleOf':1,
+                            'multipleOf':.1,
                         },
                         new_value, new_node_id, new_child_id, new_sub_type)
                 if new_sub_type == 15: # V_ARMED
