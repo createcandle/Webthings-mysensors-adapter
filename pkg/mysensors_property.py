@@ -8,7 +8,7 @@ from .util import pretty, is_a_number, get_int_or_float
 class MySensorsProperty(Property):
     """MySensors property type."""
 
-    def __init__(self, device, name, description, value, node_id, child_id, subchild_id):
+    def __init__(self, device, name, description, values, value, node_id, child_id, main_type, subchild_id):
         """
         Initialize the object.
 
@@ -32,11 +32,14 @@ class MySensorsProperty(Property):
             #self.device = device
             self.node_id = node_id # These three are used in the set_value function to send a message back to the proper node in the MySensors network.
             self.child_id = child_id
+            self.main_type = main_type
             self.subchild_id = subchild_id
 
             self.device = device
             self.name = name
+            self.title = name
             self.description = description
+            self.values = values
             self.value = value
 
             #self.set_cached_value(value)

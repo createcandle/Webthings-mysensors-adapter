@@ -139,7 +139,7 @@ class MySensorsDevice(Device):
                             'type': 'boolean',
                             'readOnly': True,
                         },
-                        new_value, new_node_id, new_child_id, new_sub_type)
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
 
                 if new_sub_type == 15: # V_ARMED
                     self.properties[targetPropertyID] = MySensorsProperty(
@@ -150,7 +150,7 @@ class MySensorsDevice(Device):
                             'label': new_description,
                             'type': 'boolean',
                         },
-                        new_value, new_node_id, new_child_id, new_sub_type)
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
 
 
             elif new_main_type == 1:                       # Motion
@@ -165,7 +165,7 @@ class MySensorsDevice(Device):
                             'type': 'boolean',
                             'readOnly': True,
                         },
-                        new_value, new_node_id, new_child_id, new_sub_type)
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
                 if new_sub_type == 15: # V_ARMED
                     self._type.append('OnOffSwitch')                       
                     self.properties[targetPropertyID] = MySensorsProperty(
@@ -176,7 +176,7 @@ class MySensorsDevice(Device):
                             'label': new_description,
                             'type': 'boolean',
                         },
-                        new_value, new_node_id, new_child_id, new_sub_type)
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
 
 
             elif new_main_type == 2:                       # Smoke
@@ -191,7 +191,7 @@ class MySensorsDevice(Device):
                             'type': 'boolean',
                             'readOnly': True,
                         },
-                        new_value, new_node_id, new_child_id, new_sub_type)
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
                 if new_sub_type == 15: # V_ARMED
                     #self._type.append('OnOffSwitch')                       
                     self.properties[targetPropertyID] = MySensorsProperty(
@@ -202,7 +202,7 @@ class MySensorsDevice(Device):
                             'label': new_description,
                             'type': 'boolean',
                         },
-                        new_value, new_node_id, new_child_id, new_sub_type)
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
 
 
             elif new_main_type == 3:                       # Binary
@@ -216,7 +216,7 @@ class MySensorsDevice(Device):
                             'label': new_description,
                             'type': 'boolean',
                         },
-                        new_value, new_node_id, new_child_id, new_sub_type)
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
                 if new_sub_type == 17: # V_WATT (power meter)
                     #if 'OnOffSwitch' in self._type:
                     #    self._type.remove('OnOffSwitch')
@@ -230,7 +230,7 @@ class MySensorsDevice(Device):
                             'type': 'number',
                             'unit': 'watt',
                         },
-                        new_value, new_node_id, new_child_id, new_sub_type)
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
 
 
             elif new_main_type == 4:                       # Dimmer
@@ -244,7 +244,7 @@ class MySensorsDevice(Device):
                             'label': new_description,
                             'type': 'boolean',
                         },
-                        new_value, new_node_id, new_child_id, new_sub_type)
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
                 if new_sub_type == 3: # V_PERCENTAGE
                     #self._type.append('Light')
                     self.properties[targetPropertyID] = MySensorsProperty(
@@ -259,7 +259,7 @@ class MySensorsDevice(Device):
                             'type': 'integer',
                             'unit': 'percent',
                         },
-                        new_value, new_node_id, new_child_id, new_sub_type)
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
                 if new_sub_type == 17: # V_WATT
                     #self._type.append('EnergyMonitor')
                     self.properties[targetPropertyID] = MySensorsProperty(
@@ -272,7 +272,7 @@ class MySensorsDevice(Device):
                             'unit': 'watt',
                             'readOnly': True,
                         },
-                        new_value, new_node_id, new_child_id, new_sub_type)
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
 
 
             elif new_main_type == 5:                       # Window covers (percentage)
@@ -291,7 +291,7 @@ class MySensorsDevice(Device):
                             'unit': 'percent',
                             'multipleOf':1,
                         },
-                        new_value, new_node_id, new_child_id, new_sub_type)
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
                 if new_sub_type == 30: # V_DOWN
                     self.properties[targetPropertyID] = MySensorsProperty(
                         self,
@@ -301,7 +301,7 @@ class MySensorsDevice(Device):
                             'label': new_description,
                             'type': 'boolean',
                         },
-                        new_value, new_node_id, new_child_id, new_sub_type)
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
                 if new_sub_type == 29 or new_sub_type == 31: # V_UP and V_STOP
                     self.properties[targetPropertyID] = MySensorsProperty(
                         self,
@@ -311,7 +311,7 @@ class MySensorsDevice(Device):
                             'label': new_description,
                             'type': 'boolean',
                         },
-                        new_value, new_node_id, new_child_id, new_sub_type)
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
 
 
 
@@ -329,7 +329,7 @@ class MySensorsDevice(Device):
                             'readOnly': True,
                             'multipleOf':0.1,
                         },
-                    new_value, new_node_id, new_child_id, new_sub_type)
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
 
 
             elif new_main_type == 7:                       # Humidity
@@ -348,7 +348,7 @@ class MySensorsDevice(Device):
                             'readOnly': True,
                             'multipleOf':.1,
                         },
-                        new_value, new_node_id, new_child_id, new_sub_type)
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
 
 
             elif new_main_type == 8:                       # Barometer
@@ -367,7 +367,7 @@ class MySensorsDevice(Device):
                             'readOnly': True,
                             'multipleOf':1,
                         },
-                        new_value, new_node_id, new_child_id, new_sub_type)
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
                 if new_sub_type == 5: # V_FORECAST (weather prediction)
                     self.properties[targetPropertyID] = MySensorsProperty(
                         self,
@@ -377,7 +377,7 @@ class MySensorsDevice(Device):
                             'type': 'string',
                             'readOnly': True,
                         },
-                        new_value, new_node_id, new_child_id, new_sub_type)
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
 
 
             elif new_main_type == 9:                       # Wind
@@ -391,7 +391,7 @@ class MySensorsDevice(Device):
                             'readOnly': True,
                             'multipleOf':0.1,
                         },
-                        new_value, new_node_id, new_child_id, new_sub_type)
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
                 if new_sub_type == 10: # V_DIRECTION (of wind)
                     self.properties[targetPropertyID] = MySensorsProperty(
                         self,
@@ -401,7 +401,7 @@ class MySensorsDevice(Device):
                             'type': 'string',
                             'readOnly': True,
                         },
-                        new_value, new_node_id, new_child_id, new_sub_type)
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
 
                     
             elif new_main_type == 10:                      # Rain
@@ -415,7 +415,7 @@ class MySensorsDevice(Device):
                             'readOnly': True,
                             'multipleOf':0.1,
                         },
-                        new_value, new_node_id, new_child_id, new_sub_type)
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
                 if new_sub_type == 7: # V_RAINRATE
                     self.properties[targetPropertyID] = MySensorsProperty(
                         self,
@@ -426,7 +426,7 @@ class MySensorsDevice(Device):
                             'readOnly': True,
                             'multipleOf':0.1,
                         },
-                        new_value, new_node_id, new_child_id, new_sub_type)
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
 
 
             elif new_main_type == 11:                      # UV level
@@ -440,7 +440,7 @@ class MySensorsDevice(Device):
                             'readOnly': True,
                             'multipleOf':0.1,
                         },
-                        new_value, new_node_id, new_child_id, new_sub_type)
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
 
                     
             elif new_main_type == 12:                      # Weight
@@ -454,7 +454,7 @@ class MySensorsDevice(Device):
                             'readOnly': True,
                             'multipleOf':0.01,
                         },
-                        new_value, new_node_id, new_child_id, new_sub_type)
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
 
             elif new_main_type == 13:                      # Power measuring device, like power meters
                 if new_sub_type == 17: # V_WATT
@@ -469,7 +469,7 @@ class MySensorsDevice(Device):
                             'readOnly': True,
                             'multipleOf':0.01,
                         },
-                        new_value, new_node_id, new_child_id, new_sub_type)
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
 
 
 
@@ -487,7 +487,7 @@ class MySensorsDevice(Device):
                             'readOnly': True,
                             'multipleOf':0.1,
                         },
-                    new_value, new_node_id, new_child_id, new_sub_type)
+                    values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
                 if new_sub_type == 45: # V_HVAC_SETPOINT_HEAT
                     #self._type.append('MultiLevelSwitch')
                     self.properties[targetPropertyID] = MySensorsProperty(
@@ -502,7 +502,7 @@ class MySensorsDevice(Device):
                             'unit': 'degree celsius',
                             'multipleOf':0.1,
                         },
-                    new_value, new_node_id, new_child_id, new_sub_type)
+                    values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
                 if new_sub_type == 21: # V_HVAC_FLOW_STATE
                     #self._type.append('MultiLevelSwitch')
                     self.properties[targetPropertyID] = MySensorsProperty(
@@ -520,7 +520,7 @@ class MySensorsDevice(Device):
                                 'AutoChangeOver'
                               ]
                         },
-                    new_value, new_node_id, new_child_id, new_sub_type)
+                    values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
                 if new_sub_type == 2: #V_status
                     #self._type.append('BinarySensor')
                     self.properties[targetPropertyID] = MySensorsProperty(
@@ -532,7 +532,7 @@ class MySensorsDevice(Device):
                             'type': 'boolean',
                             'readOnly': True,
                         },
-                        new_value, new_node_id, new_child_id, new_sub_type)
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
                     
                 # This is out of spec for MySensors:
                 if new_sub_type == 16: #V_TRIPPED
@@ -546,7 +546,7 @@ class MySensorsDevice(Device):
                             'type': 'boolean',
                             'readOnly': True,
                         },
-                        new_value, new_node_id, new_child_id, new_sub_type)
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
                     
 
             elif new_main_type == 15:                      # Distance
@@ -563,7 +563,7 @@ class MySensorsDevice(Device):
                                 'readOnly': True,
                                 'multipleOf':0.01,
                             },
-                            new_value, new_node_id, new_child_id, new_sub_type)
+                            values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
                     else:
                         self.properties[targetPropertyID] = MySensorsProperty(
                             self,
@@ -574,7 +574,7 @@ class MySensorsDevice(Device):
                                 'readOnly': True,
                                 'multipleOf':0.01,
                             },
-                            new_value, new_node_id, new_child_id, new_sub_type)
+                            values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
 
 
             elif new_main_type == 16:                      # Light level
@@ -591,7 +591,7 @@ class MySensorsDevice(Device):
                             'unit': 'percent',
                             'multipleOf':1,
                         },
-                        new_value, new_node_id, new_child_id, new_sub_type)
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
                 if new_sub_type == 37: #V_LEVEL
                     self.properties[targetPropertyID] = MySensorsProperty(
                         self,
@@ -603,7 +603,7 @@ class MySensorsDevice(Device):
                             'readOnly': True,
                             'multipleOf':1,
                         },
-                        new_value, new_node_id, new_child_id, new_sub_type)
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
 
 
             elif new_main_type == 17:                      # Arduino node. This should not be turned into a property.
@@ -623,7 +623,7 @@ class MySensorsDevice(Device):
                             'label': new_description,
                             'type': 'boolean',
                         },
-                        new_value, new_node_id, new_child_id, new_sub_type)
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
 
 
             elif new_main_type == 20:                      # Ir sender/receiver device
@@ -641,7 +641,7 @@ class MySensorsDevice(Device):
                             'readOnly': True,
                             'multipleOf':0.01,
                         },
-                        new_value, new_node_id, new_child_id, new_sub_type)
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
 
 
             elif new_main_type == 22:                      # Air quality
@@ -657,7 +657,7 @@ class MySensorsDevice(Device):
                                 'readOnly': True,
                                 'multipleOf':0.1,
                             },
-                            new_value, new_node_id, new_child_id, new_sub_type)
+                            values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
                     else:
                         self.properties[targetPropertyID] = MySensorsProperty(
                             self,
@@ -668,7 +668,7 @@ class MySensorsDevice(Device):
                                 'readOnly': True,
                                 'multipleOf':0.1,
                             },
-                            new_value, new_node_id, new_child_id, new_sub_type)
+                            values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
 
 
             elif new_main_type == 23:                      # CUSTOM
@@ -682,7 +682,7 @@ class MySensorsDevice(Device):
                             'readOnly': True,
                             'multipleOf':0.01,
                         },
-                        new_value, new_node_id, new_child_id, new_sub_type)
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
 
 
             elif new_main_type == 24:                      # S_DUST
@@ -698,7 +698,7 @@ class MySensorsDevice(Device):
                                 'readOnly': True,
                                 'multipleOf':0.1,
                             },
-                            new_value, new_node_id, new_child_id, new_sub_type)
+                            values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
                     else:
                         self.properties[targetPropertyID] = MySensorsProperty(
                             self,
@@ -709,7 +709,7 @@ class MySensorsDevice(Device):
                                 'readOnly': True,
                                 'multipleOf':0.1,
                             },
-                            new_value, new_node_id, new_child_id, new_sub_type)
+                            values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
 
 
             elif new_main_type == 25:                      # Scene controller
@@ -723,7 +723,7 @@ class MySensorsDevice(Device):
                             'label': new_description,
                             'type': 'boolean',
                         },
-                        new_value, new_node_id, new_child_id, new_sub_type)
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
 
 
             elif new_main_type == 26 or new_main_type == 27:                      # RGB light or RGB light with separate white level
@@ -739,7 +739,7 @@ class MySensorsDevice(Device):
                             'label': new_description,
                             'type': 'boolean',
                         },
-                        new_value, new_node_id, new_child_id, new_sub_type)
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
                 if new_sub_type == 3: # V_PERCENTAGE
                     #self._type.append('Light')
                     self.properties[targetPropertyID] = MySensorsProperty(
@@ -755,7 +755,7 @@ class MySensorsDevice(Device):
                             'unit': 'percent',
                             'multipleOf':1,
                         },
-                        new_value, new_node_id, new_child_id, new_sub_type)
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
 
             #elif new_main_type == 27:                      # RGB light with separate white level
             #    #self._type.append(['OnOffSwitch', 'Light', 'ColorControl'])
@@ -771,7 +771,7 @@ class MySensorsDevice(Device):
                         'type': 'string',
                         'readOnly': True,
                     },
-                    new_value, new_node_id, new_child_id, new_sub_type)
+                    values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
 
 
             elif new_main_type == 29:                      # Thermostat / HVAC
@@ -792,7 +792,7 @@ class MySensorsDevice(Device):
                                 'AutoChangeOver'
                               ]
                         },
-                    new_value, new_node_id, new_child_id, new_sub_type)
+                    values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
                 if new_sub_type == 47: # V_HVAC_FLOW_MODE
                     #self._type.append('MultiLevelSwitch')
                     self.properties[targetPropertyID] = MySensorsProperty(
@@ -809,7 +809,7 @@ class MySensorsDevice(Device):
                                 'PeriodicOn'
                               ]
                         },
-                    new_value, new_node_id, new_child_id, new_sub_type)
+                    values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
                 if new_sub_type == 47: # V_HVAC_SPEED
                     #self._type.append('MultiLevelSwitch')
                     self.properties[targetPropertyID] = MySensorsProperty(
@@ -827,7 +827,7 @@ class MySensorsDevice(Device):
                                 'Auto'
                               ]
                         },
-                    new_value, new_node_id, new_child_id, new_sub_type)
+                    values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
                 if new_sub_type == 44: # V_HVAC_SETPOINT_COOL
                     #self._type.append('MultiLevelSwitch')
                     self.properties[targetPropertyID] = MySensorsProperty(
@@ -842,7 +842,7 @@ class MySensorsDevice(Device):
                             'unit': 'degree celsius',
                             'multipleOf':0.1,
                         },
-                    new_value, new_node_id, new_child_id, new_sub_type)
+                    values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
                 if new_sub_type == 45: # V_HVAC_SETPOINT_HEAT
                     #self._type.append('MultiLevelSwitch')
                     self.properties[targetPropertyID] = MySensorsProperty(
@@ -857,7 +857,7 @@ class MySensorsDevice(Device):
                             'unit': 'degree celsius',
                             'multipleOf':0.1,
                         },
-                    new_value, new_node_id, new_child_id, new_sub_type)
+                    values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
 
 
             elif new_main_type == 30:                      # Volt meter
@@ -873,7 +873,7 @@ class MySensorsDevice(Device):
                         'readOnly': True,
                         'multipleOf':0.01,
                     },
-                    new_value, new_node_id, new_child_id, new_sub_type)
+                    values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
 
 
             elif new_main_type == 31:                      # Sprinkler
@@ -887,7 +887,7 @@ class MySensorsDevice(Device):
                             'label': new_description,
                             'type': 'boolean',
                         },
-                        new_value, new_node_id, new_child_id, new_sub_type)
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
 
                 if new_sub_type == 16: # V_tripped
                     self._type.append('Alarm')
@@ -900,7 +900,7 @@ class MySensorsDevice(Device):
                             'type': 'number',
                             'readOnly': True,
                         },
-                        new_value, new_node_id, new_child_id, new_sub_type)
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
 
 
             elif new_main_type == 32:                      # Water leak
@@ -912,7 +912,7 @@ class MySensorsDevice(Device):
                             'label': new_description,
                             'type': 'boolean',
                         },
-                        new_value, new_node_id, new_child_id, new_sub_type)
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
                 if new_sub_type == 16: #V_TRIPPED
                     self._type.append('LeakSensor') 
                     self.properties[targetPropertyID] = MySensorsProperty(
@@ -924,34 +924,81 @@ class MySensorsDevice(Device):
                             'type': 'boolean',
                             'readOnly': True,
                         },
-                        new_value, new_node_id, new_child_id, new_sub_type)
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
 
 
             elif new_main_type == 33:                       # Sound
                 #self._type.append('MultiLevelSensor')        
-                self.properties[targetPropertyID] = MySensorsProperty(
-                    self,
-                    targetPropertyID,
-                    {
-                        'label': new_description,
-                        'type': 'number',
-                        'readOnly': True,
-                        'multipleOf':0.1,
-                    },
-                    new_value, new_node_id, new_child_id, new_sub_type)
+                if new_sub_type == 37: # V_LEVEL
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            'label': new_description,
+                            'type': 'number',
+                            'readOnly': True,
+                            'multipleOf':0.1,
+                        },
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
+                if new_sub_type == 16: # V_TRIPPED
+                    self._type.append('DoorSensor')           
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            '@type': 'OpenProperty',
+                            'label': new_description,
+                            'type': 'boolean',
+                            'readOnly': True,
+                        },
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
+                if new_sub_type == 15: # V_ARMED
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            #'@type': 'OnOffProperty',
+                            'label': new_description,
+                            'type': 'boolean',
+                        },
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
 
 
             elif new_main_type == 34:                       # Vibration
                 #self._type.append('MultiLevelSensor')        
-                self.properties[targetPropertyID] = MySensorsProperty(
-                    self,
-                    targetPropertyID,
-                    {
-                        'label': new_description,
-                        'type': 'number',
-                        'readOnly': True,
-                    },
-                    new_value, new_node_id, new_child_id, new_sub_type)
+                if new_sub_type == 37: # V_LEVEL
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            'label': new_description,
+                            'type': 'number',
+                            'readOnly': True,
+                            'multipleOf':0.1,
+                        },
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
+                if new_sub_type == 16: # V_TRIPPED
+                    self._type.append('DoorSensor')           
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            '@type': 'OpenProperty',
+                            'label': new_description,
+                            'type': 'boolean',
+                            'readOnly': True,
+                        },
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
+                if new_sub_type == 15: # V_ARMED
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            #'@type': 'OnOffProperty',
+                            'label': new_description,
+                            'type': 'boolean',
+                        },
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
 
 
             elif new_main_type == 35:                       # Moisture
@@ -966,7 +1013,7 @@ class MySensorsDevice(Device):
                             'readOnly': True,
                             'multipleOf':.1,
                         },
-                        new_value, new_node_id, new_child_id, new_sub_type)
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
                 if new_sub_type == 15: # V_ARMED
                     #self._type.append('OnOffSwitch')                       
                     self.properties[targetPropertyID] = MySensorsProperty(
@@ -977,7 +1024,7 @@ class MySensorsDevice(Device):
                             'label': new_description,
                             'type': 'boolean',
                         },
-                        new_value, new_node_id, new_child_id, new_sub_type)
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
                 if new_sub_type == 16: # V_TRIPPED                   
                     self._type.append('LeakSensor') 
                     self.properties[targetPropertyID] = MySensorsProperty(
@@ -989,7 +1036,7 @@ class MySensorsDevice(Device):
                             'type': 'boolean',
                             'readOnly': True,
                         },
-                        new_value, new_node_id, new_child_id, new_sub_type)
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
 
 
             elif new_main_type == 36:                      # S_Info
@@ -1001,7 +1048,7 @@ class MySensorsDevice(Device):
                             'label': new_description,
                             'type': 'string',
                         },
-                        new_value, new_node_id, new_child_id, new_sub_type)
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
 
 
             elif new_main_type == 38:                      # Gas
@@ -1015,7 +1062,7 @@ class MySensorsDevice(Device):
                             'readOnly': True,
                             'multipleOf':0.01,
                         },
-                        new_value, new_node_id, new_child_id, new_sub_type)
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
 
 
             elif new_main_type == 38:                      # GPS
@@ -1027,7 +1074,7 @@ class MySensorsDevice(Device):
                             'label': new_description,
                             'type': 'string',
                         },
-                        new_value, new_node_id, new_child_id, new_sub_type)
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
 
 
             elif new_main_type == 39:                      # Water quality
@@ -1041,7 +1088,7 @@ class MySensorsDevice(Device):
                             'label': new_description,
                             'type': 'boolean',
                         },
-                        new_value, new_node_id, new_child_id, new_sub_type)
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
                 if new_sub_type == 0: # V_TEMP
                     self._type.append('TemperatureSensor')
                     self.properties[targetPropertyID] = MySensorsProperty(
@@ -1055,7 +1102,7 @@ class MySensorsDevice(Device):
                             'readOnly': True,
                             'multipleOf':0.1,
                         },
-                    new_value, new_node_id, new_child_id, new_sub_type)
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
                 if new_sub_type == 51 or new_sub_type == 52 or new_sub_type == 53: # V_PH, V_ORP, V_EC
                     self.properties[targetPropertyID] = MySensorsProperty(
                         self,
@@ -1065,7 +1112,7 @@ class MySensorsDevice(Device):
                             'type': 'number',
                             'readOnly': True,
                         },
-                        new_value, new_node_id, new_child_id, new_sub_type)
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
                     
             else:
                 print("- S_TYPE NOT SUPPORTED YET")

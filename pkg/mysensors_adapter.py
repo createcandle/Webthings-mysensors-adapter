@@ -1,6 +1,10 @@
 """MySensors adapter for Mozilla WebThings Gateway."""
 
 import os
+from os import path
+import sys
+
+sys.path.append(path.join(path.dirname(path.abspath(__file__)), 'lib'))
 
 import json
 import asyncio
@@ -62,9 +66,15 @@ class MySensorsAdapter(Adapter):
         self.show_connection_status = True
         self.first_request_done = False
         self.initial_serial_devices = set()
+        self.optimize = True
+        
+        self.separation_s = [3,4] # S types to separate V types on. S_binary and S_dimmer
+        self.separation_v = [2,3] # V types to seperate if on the above S-type. V_status and V_percentage
         
         self.MQTT_username = ""
         self.MQTT_password = ""
+        
+        self.things_list = []
         
         try:
             print("Making initial scan of USB ports")
@@ -142,20 +152,13 @@ class MySensorsAdapter(Adapter):
                                 print("Not changing connection status")
                         except Exception as ex:
                             print("Failed to set initial connection status to false: " + str(ex))
-
-
-
-
-
-
+                            
                     except Exception as ex:
                         print("Error during recreation of thing from persistence: " + str(ex))
                         
-
-
         except Exception as ex:
             print("Error during recreation from persistence: " + str(ex))
-
+            
         print("End of recreation function")
         return
 
@@ -233,7 +236,6 @@ class MySensorsAdapter(Adapter):
             print("ERROR! Unable to initialise the PyMySensors object. Details: " + str(ex))    
 
 
-
     def unload(self):
         print("Shutting down MySensors adapter")
         
@@ -256,28 +258,35 @@ class MySensorsAdapter(Adapter):
             print("-----REMOVING:" + str(device_id))
         
         try:
-            ID_to_clear = int(device_id.split('-')[-1])
-            if self.DEBUG:
-                print("THING TO REMOVE ID:" + str(device_id))
-                print("THING TO REMOVE IN DEVICES DICT:" + str(self.devices[device_id]))
-
-            del self.GATEWAY.sensors[ID_to_clear]    
-            obj = self.get_device(device_id)
-            self.handle_device_removed(obj)
-            print("Removed MySensors_" + str(ID_to_clear))
+            obj = self.get_device(device_id)        
+            self.handle_device_removed(obj)                     # Remove from device dictionary
+            print("Removed device")
+        except:
+            print("Could not remove things from devices")
+            
+        try:
+            if device_id.count('-') == 1:
+                ID_to_clear = int(device_id.split('-')[-1])
+                del self.GATEWAY.sensors[ID_to_clear]           # Remove from PyMysensors persistence
+                print("Removed device from persistence too")
         except:
             print("REMOVING MYSENSORS THING FAILED") 
 
 
     def mysensors_message(self, message):
         # Show some human readable details about the incoming message
+        extraDevice = None # Holds a copy of a property, used for optimization with voice interfaces.
+        extraProperty = None
+        
         try:
             if self.DEBUG:
-                type_names = ['presentation','set','request','internal','stream']
                 print("")
-                print(">> incoming message > " + str(type_names[message.type]) + " > id: " + str(message.node_id) + "; child: " + str(message.child_id) + "; subtype: " + str(message.sub_type) + "; payload: " + str(message.payload))
-        except:
-            print("Error while displaying incoming message in console.")
+                #print(str(vars(message)))
+            
+            type_names = ['presentation','set','request','internal','stream']
+            print(">> incoming message > " + str(type_names[message.type]) + " > id: " + str(message.node_id) + "; child: " + str(message.child_id) + "; subtype: " + str(message.sub_type) + "; payload: " + str(message.payload))
+        except Exception as ex:
+            print("Error while displaying incoming message in console: " + str(ex))
         
         
         
@@ -316,16 +325,12 @@ class MySensorsAdapter(Adapter):
                 # INTERNAL
                 # If the node is presented on the network and we get a name for it, then we can initiate a device object for it, if need be.
                 if message.type == 3: #and message.child_id != 255: # An internal message
-                    if str(targetDevice) == 'None':
+                    if targetDevice == None:
                         if message.sub_type == 11: # holds the sketch name, which will be the name of the new device
                             if self.DEBUG:
                                 print("-Internally presented device did not exist in the gateway yet. Adding now.")
-
                             try:
                                 device = MySensorsDevice(self, message.node_id, str(message.payload))
-                                #if self.DEBUG:
-                                #self.handle_device_added(device) # This could be removed. Ideally it would only be called after at least one child pas presented itself. On the other hand, it could be useful to show that a device did respond, even if the children couldn't be properly processed.
-
                             except Exception as ex:
                                 print("-Failed to add new device from internal presentation: " + str(ex))
                     else:
@@ -337,22 +342,36 @@ class MySensorsAdapter(Adapter):
                 #SET
                 # The message is a 'set' message. This should update a property value or, if the property doesn't exist yet, create it.
                 elif message.type == 1:
+                    #print("SET")
+                    # Get the value from the message
+                    new_value = None
+                    try:
+                        if is_a_number(message.payload):
+                            new_value = get_int_or_float(message.payload)
+                        else:
+                            new_value = str(message.payload)
+                    except Exception as ex:
+                        print("could not interpret payload: " + str(ex))
+                        return
+                    #print("New update value:" + str(new_value))
 
                     # If there is a 'set' message but the device for this node somehow doesn't exist yet, then we should quickly create it.
-                    if str(targetDevice) == 'None':
+                    if targetDevice == None:
                         if self.DEBUG:
                             print("Incoming 'set' message, but device doesn't exist (yet). If possible, will try to quickly create the device using persistence data.") # Perhaps the persistence data can help. Not sure if this situtation is even possible now that persistence is always used.
                         if message.node_id in self.GATEWAY.sensors:
                             print("message.node_id was in self.GATEWAY.sensors")
                             try:
+                                # Generate human readable name for the thing
                                 if str(self.GATEWAY.sensors[message.node_id].sketch_name) == 'None':
                                     name = 'MySensors-' + str(message.node_id)
                                     if self.DEBUG:
                                         print("-Node was in persistence, but no sketch name found. Generated a generic name.")
                                 else:
                                     name = str(self.GATEWAY.sensors[message.node_id].sketch_name)
-
                                 print("-Name for the new device is: " + name)
+                                
+                                # Add the node to the devices list
                                 device = MySensorsDevice(self, message.node_id, name)
                                 self.handle_device_added(device)
                                 
@@ -361,7 +380,7 @@ class MySensorsAdapter(Adapter):
                                     targetDevice = self.get_device("MySensors_" + str(message.node_id)) # targetDevice will be 'None' if it wasn't found.
                                 except Exception as ex:
                                     print("Error while checking if node exists as device AGAIN: " + str(ex))
-                    
+                        
                             except Exception as ex:
                                 print("-Failed to add new device: " + str(ex))
                         else:
@@ -369,19 +388,23 @@ class MySensorsAdapter(Adapter):
                             
                         
                         
-                    if str(targetDevice) != 'None':
+                    if targetDevice != None:
                         #print("targetDevice = " + str(targetDevice))
+                        if targetDevice.connected == False:
+                            targetDevice.connected = True
+                            targetDevice.connected_notify(True)
+                        
                         if message.sub_type != 43: # avoid creating a property for V_UNIT_PREFIX
+                            
+                            
+                            targetPropertyID = str(message.node_id) + "-" + str(message.child_id) + "-" + str(message.sub_type) # e.g. 2-5-36
                             try:
-                                targetPropertyID = str(message.node_id) + "-" + str(message.child_id) + "-" + str(message.sub_type) # e.g. 2-5-36
                                 targetProperty = targetDevice.find_property(targetPropertyID)
-                                #if self.DEBUG:
-                                    #print("adapter; targetProperty = " + str(targetProperty))
                             except Exception as ex:
                                 print("Error getting target property: " + str(ex))
-
+                                
                             # The property does not exist yet:
-                            if str(targetProperty) == 'None': 
+                            if targetProperty == None: 
                                 if self.DEBUG:
                                     print("-Property did not exist yet.")
                                     
@@ -390,7 +413,7 @@ class MySensorsAdapter(Adapter):
                                     print("child: " + str(child))
                                     if self.DEBUG:
                                         print("-The PyMySensors node existed, and has child data. Now to present it to the WebThings Gateway. Child = " + str(child))
-                                    
+                                        
                                     if not child.description:
                                         print("-Child had no description")
                                         new_description = 'Property type ' + str(message.sub_type)
@@ -425,33 +448,25 @@ class MySensorsAdapter(Adapter):
                                         print("-Removed faulty node child from persistence data")
                                         
                                         
+                                
                             # The property has already been created, so just update its value.    
-                            if str(targetProperty) != 'None':
-                                if self.DEBUG:
-                                    #pass
-                                    print("-About to update: " + str(targetPropertyID))
-                                    
-                                try:
-                                    if is_a_number(message.payload):
-                                        new_value = get_int_or_float(message.payload)
-                                    else:
-                                        new_value = str(message.payload)
-                                        
-                                    #print("New update value:" + str(new_value))
-                                    targetProperty = targetDevice.find_property(targetPropertyID)
-                                    #print("Target property object: " + str(targetProperty))
-                                    targetProperty.update(new_value)
-                                    #targetProperty.set_cached_value(new_value)
-                                    #targetDevice.notify_property_changed(targetProperty)
-                                    if self.DEBUG:
-                                        print("-Adapter has updated the property")
-                                except Exception as ex:
-                                    print("Update property error: " + str(ex))
-                                    
-                        if targetDevice.connected == False:
-                            targetDevice.connected = True
-                            targetDevice.connected_notify(True)
-                                    
+                            if targetProperty != None:
+                                targetProperty.update(new_value)
+                
+                # Try to also update the extra device/property, if it exists.
+                if self.optimize:
+                    try:
+                        extraDevice = self.get_device("MySensors-" + str(message.node_id) + "-" + str(message.child_id))
+                        if extraDevice != None:
+                            extraProperty = extraDevice.find_property(targetPropertyID)
+                            extraProperty.update(new_value)
+                            print("Optimization: updated extra thing: MySensors-" + str(message.node_id) + "-" + str(message.child_id))
+                    except Exception as ex:
+                        print("Error while updating extra device")            
+
+
+
+
         except Exception as ex:
             print("-Failed to handle message:" + str(ex))
 
@@ -523,28 +538,6 @@ class MySensorsAdapter(Adapter):
 
 
 
-    def start_pairing(self, timeout):
-        """
-        Start the pairing process. This starts when the user presses the + button on the things page.
-
-        timeout -- Timeout in seconds at which to quit pairing
-        """
-        #print()
-        if self.DEBUG:
-            print("PAIRING INITIATED")
-        
-        if self.pairing:
-            print("-Already pairing")
-            return
-
-        self.pairing = True
-        
-        self.try_rerequest()
-    
-        return
-
-
-
     def add_from_config(self):
         """Attempt to add all configured devices."""
         try:
@@ -568,8 +561,8 @@ class MySensorsAdapter(Adapter):
                 self.show_connection_status = bool(config['Show connection status'])
                 
             if 'Debugging' in config:
-                self.DEBUG = config['Debugging']
-                print("Debugging enabled")
+                self.DEBUG = bool(config['Debugging'])
+                print("Debugging enabled: " + str(self.DEBUG))
             else:
                 self.DEBUG = False
                 
@@ -577,6 +570,16 @@ class MySensorsAdapter(Adapter):
             print("Error loading part 1 of settings")
             
         
+        # Optimze things
+        try:
+            if 'Optimize things' in config:
+                print("-Optimization preference is present in the config data.")
+                self.optimize = bool(config['Optimize things'])
+            else:
+                print("")
+        except Exception as ex:
+            print("Metric/Fahrenheit preference not found." + str(ex))
+            
         
         # Metric or Imperial
         try:
@@ -611,7 +614,12 @@ class MySensorsAdapter(Adapter):
             self.recreate_from_persistence()
         except Exception as ex:
             print("Error while recreating after start_persistence: " + str(ex))
-            
+
+        try:
+            self.send_in_the_clones()
+        except Exception as ex:
+            print("Error while optimizing: " + str(ex))
+
             
         try:
             if 'Gateway' in config:
@@ -704,11 +712,40 @@ class MySensorsAdapter(Adapter):
         return
 
 
+
+
+    def start_pairing(self, timeout):
+        """
+        Start the pairing process. This starts when the user presses the + button on the things page.
+
+        timeout -- Timeout in seconds at which to quit pairing
+        """
+        #print()
+        if self.DEBUG:
+            print("PAIRING INITIATED")
+        
+        if self.pairing:
+            print("-Already pairing")
+            return
+
+        self.pairing = True
+        
+        self.try_rerequest()
+                
+        try:
+            self.send_in_the_clones()
+        except Exception as ex:
+            print("Error while optimizing: " + str(ex))  
+            
+        return
+
+
+
     def cancel_pairing(self):
         """Cancel the pairing process."""
         self.pairing = False
         
-        '''
+        """
         if self.DEBUG:
             print("Starting pruning")
         # Prune empty devices from the list
@@ -728,7 +765,121 @@ class MySensorsAdapter(Adapter):
         
         except:
             print("Error while pruning")
-        '''
+        """
+
+    def send_in_the_clones(self):
+        # Generate additional buttons if so desired.
+        if self.optimize:
+            print("")
+            print("Creating extra clones of properties from devices with a lot of toggles.")
+            # Check if the device already has an 'OnOff property in devices
+            
+            new_devices_to_add = []
+            properties_to_remove_OnOff_from = []
+            try:
+                for device_name in self.get_devices():
+                    print("__device_name = " + str(device_name))
+                    onOff_count = 0
+                    
+                    try:
+                        targetDevice = self.get_device(device_name)
+                        #print("targetDevice = " + str(targetDevice))
+                        for device_property in targetDevice.get_property_descriptions():
+
+                            property_object = targetDevice.find_property(device_property)
+                            #print("property object: " + str(vars(property_object)))
+
+                            try:
+                                #print("property_object.description[@type] = " + str(property_object.description['@type']))
+                                if property_object.description['@type'] == "OnOffProperty":
+                                    onOff_count += 1
+                            except:
+                                #print("no @type set")
+                                pass
+                            
+                        #print("onOff_count = " + str(onOff_count))
+                        
+                    except Exception as ex:
+                        print("Error scanning for optimizable devices: " + str(ex))
+                    
+                    
+                    if onOff_count > 1:
+                        onOff_count = 0
+                        for device_property in targetDevice.get_property_descriptions():
+                            property_object = targetDevice.find_property(device_property)
+                            try:
+                                if property_object.description['@type'] == "OnOffProperty":
+                                    onOff_count += 1
+                                    
+                                    if onOff_count > 1:
+                                        # Set the @type of the original device to None? That solves a lot of issues: it won't be copied again, and it makes the original device more predictable.. in a way. Only one toggle will be the main one.
+                                        properties_to_remove_OnOff_from.append(property_object)
+                                        
+                                    # Generate a predictable name
+                                    extra_name = str(property_object.node_id) + "-" + str(property_object.child_id)
+                                    #print(" extra_name = " + str(extra_name))
+                                    property_label = str(property_object.description['label'])
+                                    try:
+                                        property_label = str(targetDevice.title) + " - " + property_label
+                                    except:
+                                        print("upgrade to at least version 0.9 of the WebThings Gateway")
+                                        
+                                    print("extra property title = " + str(property_label))
+                                    # Check if the extra thing hasn't already been created
+                                                                    # Add the node to the devices list
+                                    device = MySensorsDevice(self, extra_name, property_label)
+                                    try:
+                                        #print("))get ID " + str(device.get_id()))
+                                        #add_child(self, new_description, node_id, child_id, main_type, sub_type, values, value):
+                                        device.add_child(property_label,property_object.node_id,property_object.child_id,property_object.main_type, property_object.subchild_id, property_object.values, property_object.value)
+                                        new_devices_to_add.append(device)
+                                        #print("CHILD ADDED!")
+                                    except Exception as ex:
+                                        print("Could not add child to thing clone: " + str(ex))
+
+                                    # Now try to get that device handle again.
+                                    #try:
+                                    #    targetDevice = self.get_device("MySensors_" + str(property_object.child_id)) # targetDevice will be 'None' if it wasn't found.
+                                    #except Exception as ex:
+                                    #    print("Error while checking if node exists as device AGAIN: " + str(ex))
+
+                            except Exception as ex:
+                                print("Error cloning: " + str(ex))
+                    
+                    
+            except Exception as ex:
+                print("Error creating extra buttons: " + str(ex))
+            
+            try:
+                for new_device in new_devices_to_add:
+                    self.handle_device_added(new_device)
+                    print("Added clone: " + str(new_device.title))
+            except:
+                print("could not add the clones to the internal devices list")
+                
+            try:
+                for donor_property in properties_to_remove_OnOff_from:
+                    print("")
+                    print(str(vars(donor_property)))
+                    donor_property.description['@type'] = None # Will this already do that?
+                    print("Removed capability from " + str(donor_property.title))
+                    
+            except:
+                print("Could not remove OnOff property from the clone's donor property")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class MQTT(object):
     """MQTT client example."""
