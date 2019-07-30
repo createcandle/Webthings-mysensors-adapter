@@ -50,3 +50,8 @@ Version 0.1.2 added
 - Support for multipleOf. This should help show a sane amount of decimals on numeric variables.
 - Experimental MQTT support based on user feedback
 - Anticipates switch to version 0.9 of the WebThings gateway by implementing title support.
+
+Version 0.1.3 added
+- New "optimize things" feature. This is a solution for things with a lot of OnOfProperty children. It basically clones them into new things. This makes the thing overview better able to function as a dashboard, and allows users to change the name for the properties. This is very useful for voice control.
+- Slightly improved support for MySensors devices
+- Attempts to use a different way of downloading requirements.
