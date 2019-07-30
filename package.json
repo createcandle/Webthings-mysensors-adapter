@@ -44,6 +44,7 @@
     "config": {
       "Gateway": "USB Serial gateway",
       "Metric": true,
+      "Optimize things": true,
       "Show connection status": true,
       "USB device name": "",
       "IP address": "",
@@ -55,6 +56,7 @@
       "type": "object",
       "required": [
         "Gateway",
+        "Optimize things",
         "Show connection status",
         "Metric",
         "Debugging"
@@ -73,7 +75,11 @@
           "type": "boolean",
           "description": "Check the box to request metric units from the devices. Uncheck it to request they send data in imperial units instead."
         },
-          "Show connection status": {
+        "Optimize things": {
+          "type": "boolean",
+          "description": "Split up big things into separate smaller things. For example, a device with 4 toggles could become 4 devices with one toggle."
+        },
+        "Show connection status": {
           "type": "boolean",
           "description": "Enabling this will show your things as disconnected (slightly transparent) until an actual sign of life has been received from the device."
         },
