@@ -473,12 +473,15 @@ class MySensorsAdapter(Adapter):
 
 
     def scan_usb_ports(self): # Scans for USB serial devices
+        print("Scanning USB serial devices")
         initial_serial_devices = set()
         result = {"state":"stable","port_id":[]}
         
         try:    
             ports = prtlst.comports()
             for port in ports:
+                if self.DEBUG:
+                    print("possible port: " + str(port))
                 if 'USB' in port[1]: #check 'USB' string in device description
                     #if self.DEBUG:
                     #    print("port: " + str(port[0]))
