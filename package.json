@@ -1,10 +1,10 @@
 {
   "name": "mysensors-adapter",
   "display_name": "MySensors",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "MySensors add-on for Mozilla WebThings Gateway",
   "author": "CreateCandle",
-  "main": "bootstrap.py",
+  "main": "main.py",
   "keywords": [
     "mozilla",
     "iot",
@@ -24,7 +24,6 @@
   "files": [
     "LICENSE",
     "SHA256SUMS",
-    "bootstrap.py",
     "main.py",
     "pkg/__init__.py",
     "pkg/mysensors_adapter.py",
@@ -40,7 +39,7 @@
       "max": 2
     },
     "plugin": true,
-    "exec": "python3 {path}/bootstrap.py",
+    "exec": "python3 {path}/main.py",
     "config": {
       "Gateway": "USB Serial gateway",
       "Metric": true,
