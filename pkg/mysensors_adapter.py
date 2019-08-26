@@ -284,7 +284,8 @@ class MySensorsAdapter(Adapter):
                 #print(str(vars(message)))
             
             type_names = ['presentation','set','request','internal','stream']
-            print(">> incoming message > " + str(type_names[message.type]) + " > id: " + str(message.node_id) + "; child: " + str(message.child_id) + "; subtype: " + str(message.sub_type) + "; payload: " + str(message.payload))
+            if self.DEBUG:
+                print(">> incoming message > " + str(type_names[message.type]) + " > id: " + str(message.node_id) + "; child: " + str(message.child_id) + "; subtype: " + str(message.sub_type) + "; payload: " + str(message.payload))
         except Exception as ex:
             print("Error while displaying incoming message in console: " + str(ex))
         
@@ -579,7 +580,8 @@ class MySensorsAdapter(Adapter):
                 print("-Optimization preference is present in the config data.")
                 self.optimize = bool(config['Optimize things'])
             else:
-                print("")
+                pass
+                #print("")
         except Exception as ex:
             print("Metric/Fahrenheit preference not found." + str(ex))
             
@@ -773,8 +775,9 @@ class MySensorsAdapter(Adapter):
     def send_in_the_clones(self):
         # Generate additional buttons if so desired.
         if self.optimize:
-            print("")
-            print("Creating extra clones of properties from devices with a lot of toggles.")
+            if self.DEBUG:
+                print("")
+                print("Creating extra clones of properties from devices with a lot of toggles.")
             # Check if the device already has an 'OnOff property in devices
             
             new_devices_to_add = []
@@ -856,16 +859,18 @@ class MySensorsAdapter(Adapter):
             try:
                 for new_device in new_devices_to_add:
                     self.handle_device_added(new_device)
-                    print("Added clone: " + str(new_device.title))
+                    if self.DEBUG:
+                        print("Added clone: " + str(new_device.title))
             except:
                 print("could not add the clones to the internal devices list")
                 
             try:
                 for donor_property in properties_to_remove_OnOff_from:
-                    print("")
-                    print(str(vars(donor_property)))
+                    #print("")
+                    #print(str(vars(donor_property)))
                     donor_property.description['@type'] = None # Will this already do that?
-                    print("Removed capability from " + str(donor_property.title))
+                    if self.DEBUG:
+                        print("Removed capability from " + str(donor_property.title))
                     
             except:
                 print("Could not remove OnOff property from the clone's donor property")
