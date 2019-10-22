@@ -1,6 +1,5 @@
 """
 This script exists to ensure that required dependencies are present.
-
 To prevent the need for building dependencies for every possible OS/arch/Python
 combination, this script will build the required dependencies. After doing so,
 or if the dependencies are already present, main.py will be started.
@@ -26,8 +25,8 @@ def install_packages():
         pass
 
     cmd = (
-        '{} -m pip install --install-option="--prefix=" -t lib '
-        '-r requirements.txt'.format(sys.executable))
+        '{} -m pip install {} --install-option="--prefix=" -t lib '
+        '-r requirements.txt --no-binary pymysensors,paho-mqtt, pyserial'.format(sys.executable, system_option))
 
     try:
         subprocess.check_call(cmd,
@@ -45,6 +44,7 @@ try:
 
     import mysensors  # noqa: F401
     import paho  # noqa: F401
+    import serial  # noqa: F401
 except ImportError:
     # If installation failed, exit with 100 to tell the gateway not to restart
     # this process.
