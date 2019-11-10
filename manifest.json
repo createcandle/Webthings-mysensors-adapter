@@ -16,22 +16,19 @@
   "name": "MySensors",
   "options": {
     "default": {
-      "Debugging": false,
       "Gateway": "USB Serial gateway",
+      "Metric": true,
+      "Show connection status": true,
+      "Optimize things": true,
+      "Timeout period": "60",
+      "USB device name": "",
       "IP address": "",
       "MQTT password": "",
       "MQTT username": "",
-      "Metric": true,
-      "Optimize things": true,
-      "Show connection status": true,
-      "USB device name": ""
+      "Debugging": false
     },
     "schema": {
       "properties": {
-        "Debugging": {
-          "description": "Debugging allows you to diagnose any issues with the add-on. If enabled it will result in a lot more debug data in the internal log (which can be found under settings -> developer -> view internal logs).",
-          "type": "boolean"
-        },
         "Gateway": {
           "description": "How are you talking to the MySensors network? Via a USB device is most common.",
           "enum": [
@@ -39,6 +36,26 @@
             "Ethernet gateway",
             "MQTT gateway"
           ],
+          "type": "string"
+        },
+        "Metric": {
+          "description": "Check the box to request metric units from the devices. Uncheck it to request they send data in imperial units instead.",
+          "type": "boolean"
+        },
+        "Show connection status": {
+          "description": "Enabling this will show your things as disconnected (slightly transparent) until an actual sign of life has been received from the device.",
+          "type": "boolean"
+        },
+        "Optimize things": {
+          "description": "Split up big things into separate smaller things. For example, a device with 4 toggles could become 4 devices with one toggle.",
+          "type": "boolean"
+        },
+        "Timeout period": {
+          "description": "After how many minutes of inactivity should a device be reported as no longer connected?",
+          "type": "string"
+        },
+        "USB device name": {
+          "description": "If you leave this empty, the add-on will automatically search for a connceted MySensors gateway device. If you want you can manually override this proces by providing a serial port name here. On a Linux device this would be something like '/dev/ttyUSB0'.",
           "type": "string"
         },
         "IP address": {
@@ -53,21 +70,9 @@
           "description": "The username for MQTT security.",
           "type": "string"
         },
-        "Metric": {
-          "description": "Check the box to request metric units from the devices. Uncheck it to request they send data in imperial units instead.",
+        "Debugging": {
+          "description": "Debugging allows you to diagnose any issues with the add-on. If enabled it will result in a lot more debug data in the internal log (which can be found under settings -> developer -> view internal logs).",
           "type": "boolean"
-        },
-        "Optimize things": {
-          "description": "Split up big things into separate smaller things. For example, a device with 4 toggles could become 4 devices with one toggle.",
-          "type": "boolean"
-        },
-        "Show connection status": {
-          "description": "Enabling this will show your things as disconnected (slightly transparent) until an actual sign of life has been received from the device.",
-          "type": "boolean"
-        },
-        "USB device name": {
-          "description": "If you leave this empty, the add-on will automatically search for a connceted MySensors gateway device. If you want you can manually override this proces by providing a serial port name here. On a Linux device this would be something like '/dev/ttyUSB0'.",
-          "type": "string"
         }
       },
       "required": [
@@ -75,11 +80,12 @@
         "Optimize things",
         "Show connection status",
         "Metric",
+				"Timeout period",
         "Debugging"
       ],
       "type": "object"
     }
   },
   "short_name": "MySensors",
-  "version": "0.1.6"
+  "version": "1.0.0"
 }

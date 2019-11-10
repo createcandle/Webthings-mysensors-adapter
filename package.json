@@ -1,7 +1,7 @@
 {
   "name": "mysensors-adapter",
   "display_name": "MySensors",
-  "version": "0.1.6",
+  "version": "1.0.0",
   "description": "MySensors add-on for Mozilla WebThings Gateway",
   "author": "CreateCandle",
   "main": "main.py",
@@ -45,6 +45,7 @@
       "Metric": true,
       "Optimize things": true,
       "Show connection status": true,
+			"Timeout period": "",
       "USB device name": "",
       "IP address": "",
       "MQTT username": "",
@@ -56,6 +57,7 @@
       "required": [
         "Gateway",
         "Optimize things",
+				"Timeout period",
         "Show connection status",
         "Metric",
         "Debugging"
@@ -85,6 +87,10 @@
         "USB device name": {
           "type": "string",
           "description": "If you leave this empty, the add-on will automatically search for a connceted MySensors gateway device. If you want you can manually override this proces by providing a serial port name here. On a Linux device this would be something like '/dev/ttyUSB0'."
+        },
+        "Timeout period": {
+          "type": "string",
+          "description": "After how many minutes of inactivity should a device be reported as no longer connected?"
         },
         "IP address": {
           "type": "string",
