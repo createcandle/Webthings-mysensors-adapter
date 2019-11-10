@@ -652,7 +652,7 @@ class MySensorsDevice(Device):
                     elif int(new_value) == 1:
                         new_value = 'locked'
                     else:
-                        new_value = 'jammed'
+                        new_value = 'unknown'
                         
                     print(" * * new_value for lock: " + str(new_value))
                     print(" * * values for lock: " + str(values))
