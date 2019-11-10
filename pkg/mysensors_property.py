@@ -8,7 +8,7 @@ from .util import pretty, is_a_number, get_int_or_float
 class MySensorsProperty(Property):
     """MySensors property type."""
 
-    def __init__(self, device, name, description, values, value, node_id, child_id, main_type, subchild_id):
+    def __init__(self, device, name, description, values, value, node_id, child_id, main_type, subchild_id): # subchild_id is V_TYPE
         """
         Initialize the object.
 
@@ -117,7 +117,27 @@ class MySensorsProperty(Property):
         value -- the value to update
         """
         
-        #print("property -> update")
+        print("property -> update")
+        
+        try:
+            
+            # Heater/Thermostat modifications
+            if self.main_type == 14 and self.subchild_id == 16: # S_HEATER and V_TRIPPED
+                if value == 0:
+                    value = "off"
+                else:
+                    value = "heating"
+                    
+        
+            if self.main_type == 19 and self.subchild_id == 36: # S_LOCK and V_LOCK_STATUS
+                if value == 0:
+                    value = "unlocked"
+                else:
+                    value = "locked"
+        
+        except:
+            print("error translating value from boolean to thermostat string")
+        
         
         if value != self.value:
             self.set_cached_value(value)

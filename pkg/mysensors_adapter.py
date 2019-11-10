@@ -67,6 +67,7 @@ class MySensorsAdapter(Adapter):
         self.first_request_done = False
         self.initial_serial_devices = set()
         self.optimize = True
+        self.running = True
         
         self.separation_s = [3,4] # S types to separate V types on. S_binary and S_dimmer
         self.separation_v = [2,3] # V types to seperate if on the above S-type. V_status and V_percentage
@@ -75,6 +76,10 @@ class MySensorsAdapter(Adapter):
         self.MQTT_password = ""
         
         self.things_list = []
+        
+        self.timeout_seconds = 0 # the default is a day
+        self.last_seen_timestamps = {}
+        self.previous_heartbeats = {}
         
         try:
             print("Making initial scan of USB ports")
@@ -87,6 +92,58 @@ class MySensorsAdapter(Adapter):
             self.add_from_config()
         except Exception as ex:
             print("Error loading config (and initialising PyMySensors library?): " + str(ex))
+
+
+
+    def clock(self):
+        """ Runs every minute and updates which devices are still connected """
+        print("clock thread init")
+        while self.running:
+
+            try:
+                print("CLOCK TICK")
+                current_time = int(time.time())
+                for nodeIndex in self.last_seen_timestamps:
+                    print("- nodeIndexin last_seen_timestamps: " + str(nodeIndex))
+                    
+                    pymy_heartbeat = 0
+                    if nodeIndex in self.GATEWAY.sensors:
+                        print("nodeIndex was in self.GATEWAY.sensors")
+                        try:
+                            # Some devices don't regularly send data, such as the smart lock, but they do send a 'heartbeat' signal to let us know they are still up and running.
+                            # Here we check if the heartbeat counter has changed since the previous clock tick. If it has, it gets a fresh timestamp.
+                            if int(self.GATEWAY.sensors[nodeIndex].heartbeat) != int(self.previous_heartbeats[nodeIndex]):
+                                self.previous_heartbeats[nodeIndex] = int(self.GATEWAY.sensors[nodeIndex].heartbeat)
+                                self.last_seen_timestamps[nodeIndex] = int(time.time())
+                                print("updated timeout timestamp using heartbeat data")
+                        except Exception as ex:
+                            print("Error trying to get heartbeat for timeout: " + str(ex))
+                    
+                    # Has the devices recently given some sign that it's alive? If not, set it to disconnected.
+                    # This is only done for devices that have recently crossed the timeout threshold.
+                    # A small window in which we tell the Gateway to set it to disconnected. This we we don't update the gateway's connection status too often.
+                    if int(self.last_seen_timestamps[nodeIndex]) < current_time - self.timeout_seconds and int(self.last_seen_timestamps[nodeIndex]) > ((current_time - self.timeout_seconds) - 120): 
+                            # This device hasn't been seen in a while.
+                            print(str(nodeIndex) + " hasn't been seen in a while")
+                            try:
+                                targetDevice = self.get_device("MySensors-" + str(nodeIndex))
+                                if str(targetDevice) != 'None':
+                                    targetDevice.connected_notify(False)
+                                    if self.DEBUG:
+                                        print("-Setting device status to not connected.")
+                                else:
+                                    print("Strange, couldn't actually find the device to set it to disconnected")
+                            except:
+                                print("-Error updating state to disconnected")
+                    else:
+                        print(str(nodeIndex) + " has been spotted recently enough")
+            except Exception as ex:
+                print("Clock error: " + str(ex))
+
+            time.sleep(60)
+        
+
+
 
 
 
@@ -109,9 +166,19 @@ class MySensorsAdapter(Adapter):
                 node = self.last_known_data[nodeIndex]
                 #print("node object:" + str(node))
                 if int(nodeIndex) != 0:
+                    
+                    # Add device to list of timestamps
+                    if self.timeout_seconds != 0:
+                        try:
+                            self.last_seen_timestamps.update( {int(nodeIndex):0} ) # They all start out with a time of 0, pretending they were last spotted in 1970.
+                            self.previous_heartbeats.update( {int(nodeIndex):0} )
+                        except:
+                            print("Couldn't add device to timestamp list")
+                    
+                    # Recreate
                     try:
                         if str(node['sketch_name']) == 'None':
-                            name = 'MySensors_{}'.format(nodeIndex)
+                            name = 'MySensors-{}'.format(nodeIndex)
                             if self.DEBUG:
                                 print("-Node was in persistence, but no sketch name was found.")
                         else:
@@ -140,10 +207,10 @@ class MySensorsAdapter(Adapter):
                         # Optionally, set the initial connection status to 'not connected'.
                         try:
                             #print("self.show_connection_status = " + str(self.show_connection_status))
-                            if self.show_connection_status == True:
+                            if self.timeout_seconds != 0:
                                 print("Showing device as disconnected. It will be set to 'connected' as soon as it actually makes a connection.")
                                 # Create a handle to the new device, and use its notify function.
-                                targetDevice = self.get_device("MySensors_" + str(nodeIndex))
+                                targetDevice = self.get_device("MySensors-" + str(nodeIndex))
                                 if str(targetDevice) != 'None':
                                     targetDevice.connected_notify(False)
                                     if self.DEBUG:
@@ -240,6 +307,7 @@ class MySensorsAdapter(Adapter):
         print("Shutting down MySensors adapter")
         
         try:
+            self.running = False
             self.GATEWAY.stop()
         except:
             print("MySensors adapter was unable to cleanly close PyMySensors object. This is not a problem.")
@@ -314,6 +382,15 @@ class MySensorsAdapter(Adapter):
         try:
             # If the messages is coming from a device in the MySensors network:
             if message.node_id != 0:
+                
+                # Add a last-seen timestamp (if the feature is enabled)
+                if self.timeout_seconds != 0:
+                    try:
+                        print(str(message.node_id) + " gets timestamp " + str(int(time.time())))
+                        self.last_seen_timestamps.update( { message.node_id: int(time.time()) } )
+                    except Exception as ex:
+                        print("error updating timestamp dictionary: " + str(ex))
+                
                 # first we check if the incoming node_id already has already been presented to the WebThings Gateway.
                 try:
                     #print("get_devices = " + str(self.get_devices()))
@@ -344,6 +421,7 @@ class MySensorsAdapter(Adapter):
                 # The message is a 'set' message. This should update a property value or, if the property doesn't exist yet, create it.
                 elif message.type == 1:
                     #print("SET")
+                    
                     # Get the value from the message
                     new_value = None
                     try:
@@ -378,7 +456,7 @@ class MySensorsAdapter(Adapter):
                                 
                                 # Now try to get that device handle again.
                                 try:
-                                    targetDevice = self.get_device("MySensors_" + str(message.node_id)) # targetDevice will be 'None' if it wasn't found.
+                                    targetDevice = self.get_device("MySensors-" + str(message.node_id)) # targetDevice will be 'None' if it wasn't found.
                                 except Exception as ex:
                                     print("Error while checking if node exists as device AGAIN: " + str(ex))
                         
@@ -388,7 +466,7 @@ class MySensorsAdapter(Adapter):
                             print("Node ID not found in persistence file, so cannot re-create device. Please restart the node.")
                             
                         
-                        
+                    # Here we can be sure that the target thing exists (thanks to the check above)
                     if targetDevice != None:
                         #print("targetDevice = " + str(targetDevice))
                         if targetDevice.connected == False:
@@ -466,6 +544,7 @@ class MySensorsAdapter(Adapter):
                         print("Error while updating extra device")            
 
 
+                
 
 
         except Exception as ex:
@@ -574,7 +653,7 @@ class MySensorsAdapter(Adapter):
             print("Error loading part 1 of settings")
             
         
-        # Optimze things
+        # Optimize things
         try:
             if 'Optimize things' in config:
                 print("-Optimization preference is present in the config data.")
@@ -583,8 +662,31 @@ class MySensorsAdapter(Adapter):
                 pass
                 #print("")
         except Exception as ex:
-            print("Metric/Fahrenheit preference not found." + str(ex))
+            print("Optimize things preference error:" + str(ex))
             
+        
+        # Timeout period
+        try:
+            if 'Timeout period' in config:
+                print("-Timeout period preference is present in the config data.")
+                self.timeout_seconds = int(config['Timeout period']) * 60
+                if self.timeout_seconds != 0:
+                    print("Starting the internal clock")
+                    try:
+                        t = threading.Thread(target=self.clock)
+                        t.daemon = True
+                        t.start()
+                    except:
+                        print("Error starting the clock thread")
+                else:
+                    print("-Timeout period was set to 0, so will not check for timeouts.")    
+                
+            else:
+                print("Timeout period was not in config")
+        except Exception as ex:
+            print("Timeout period preference error:" + str(ex))
+            
+        
         
         # Metric or Imperial
         try:
@@ -663,7 +765,7 @@ class MySensorsAdapter(Adapter):
                                     ser_bytes = current_serial_object.readline()
                                     decoded_bytes = ser_bytes.decode("utf-8") # Use ASCII decode instead?
                                     if self.DEBUG:
-                                        print("Serial data reveived: " + str(decoded_bytes))
+                                        print("Serial data received: " + str(decoded_bytes))
                                     if "Gateway startup complete" in decoded_bytes:
                                         print("After a scan the serial gateway device was found on port " + str(port_id))
                                         dev_port = str(port_id)
