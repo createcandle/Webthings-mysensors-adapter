@@ -55,3 +55,6 @@ Version 0.1.3 added
 - New "optimize things" feature. This is a solution for things with a lot of OnOfProperty children. It basically clones them into new things. This makes the thing overview better able to function as a dashboard, and allows users to change the name for the properties. This is very useful for voice control.
 - Slightly improved support for MySensors devices
 - Attempts to use a different way of downloading requirements.
+
+Version 1.0.0
+- Support for timeout functionality. If a node doesn't respond withith a (user definable) timeframe, the node will set to disconnected.
