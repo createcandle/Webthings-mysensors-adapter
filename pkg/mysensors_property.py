@@ -127,13 +127,13 @@ class MySensorsProperty(Property):
                     value = "off"
                 else:
                     value = "heating"
-                    
-        
-            if self.main_type == 19 and self.subchild_id == 36: # S_LOCK and V_LOCK_STATUS
-                if value == 0:
-                    value = "unlocked"
-                else:
-                    value = "locked"
+            
+            # Support for the new Lock capability turned out to be a bit too complex.
+            #if self.main_type == 19 and self.subchild_id == 36: # S_LOCK and V_LOCK_STATUS
+            #    if value == 1:
+            #        value = "locked"
+            #    else:
+            #        value = "unlocked"
         
         except:
             print("error translating value from boolean to thermostat string")

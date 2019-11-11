@@ -927,10 +927,11 @@ class MySensorsAdapter(Adapter):
                                     extra_name = str(property_object.node_id) + "-" + str(property_object.child_id)
                                     #print(" extra_name = " + str(extra_name))
                                     property_label = str(property_object.description['label'])
-                                    try:
-                                        property_label = str(targetDevice.title) + " - " + property_label
-                                    except:
-                                        print("upgrade to at least version 0.9 of the WebThings Gateway")
+                                    
+                                    #try:
+                                    #    property_label = str(targetDevice.title) + " - " + property_label
+                                    #except:
+                                    #    print("upgrade to at least version 0.9 of the WebThings Gateway")
                                         
                                     print("extra property title = " + str(property_label))
                                     # Check if the extra thing hasn't already been created

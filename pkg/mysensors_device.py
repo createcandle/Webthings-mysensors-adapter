@@ -5,7 +5,7 @@ import threading
 import time
 import mysensors.mysensors as mysensors
 
-from gateway_addon import Device
+from gateway_addon import Device, Action
 from .mysensors_property import MySensorsProperty
 from .util import pretty, is_a_number, get_int_or_float
 
@@ -52,17 +52,6 @@ class MySensorsDevice(Device):
         #print("name = " + str(self.name))
         #print("title = " + str(self.title))
         #print("as_dict = " + str(self.as_dict()))
-
-
-
-    def action_notify(self, action):
-        """
-        Notify the AddonManager in the Gateway that an action's status changed.
-        action -- the action whose status changed
-        """
-        print("An action has been called on this device:")
-        print(str(action))
-        self.adapter.manager_proxy.send_action_status_notification(action)
 
 
 
@@ -517,7 +506,7 @@ class MySensorsDevice(Device):
                             'maximum':150,
                             'type': 'number',
                             'unit': 'degree celsius',
-                            'multipleOf':0.1,
+                            'multipleOf':0.5,
                         },
                     values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
                 if new_sub_type == 21: # V_HVAC_FLOW_STATE
@@ -534,7 +523,7 @@ class MySensorsDevice(Device):
                                 'off',  # Same in mySensors (but capitalised)
                                 'heat', # MySensors value: HeatOn
                                 'cool', # MySensors value: CoolOn
-                                'auto'  # MySensors value: 'AutoChangeOver'
+                                'auto',  # MySensors value: 'AutoChangeOver'
                               ] 
                         },
                     values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
@@ -552,7 +541,26 @@ class MySensorsDevice(Device):
                         values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
                     
                 # This is out of spec for MySensors:
-                if new_sub_type == 16: #V_TRIPPED
+                
+                if new_sub_type == 47: # V_TEXT
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            '@type': 'HeatingCoolingProperty',
+                            'label': new_description,
+                            'type': 'string',
+                            'enum': [
+                                'off',
+                                'heating',
+                                'cooling',
+                              ],
+                            'readOnly': True,
+                        },
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
+
+                # This is also out of spec
+                if false and new_sub_type == 16: #V_TRIPPED
                     #self._type.append('BinarySensor')
                     
                     print()
@@ -571,10 +579,18 @@ class MySensorsDevice(Device):
                             '@type': 'HeatingCoolingProperty',
                             'label': new_description,
                             'type': 'string',
+                            'enum': [
+                                'off',
+                                'heating', 
+                                'cooling',
+                              ],
                             'readOnly': True,
                         },
                         values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
-                    
+
+
+
+
 
             elif new_main_type == 15:                      # Distance
                 if new_sub_type == 13: #V_DISTANCE
@@ -639,56 +655,73 @@ class MySensorsDevice(Device):
             elif new_main_type == 18:                      # Arduino repeater. This should not be turned into a property.
                 pass
 
+
             elif new_main_type == 19:                      # Lock                        
                 if new_sub_type == 36: # V_LOCK_STATUS
-                    #if "DoorSensor" in self._type:
-                    #    self._type.remove('DoorSensor')
-                    
-                    # Change the boolean values into string values
-                    print()
-                    print("LOCK VALUE = " + str(new_value))
-                    if int(new_value) == 0:
-                        new_value = 'unlocked'
-                    elif int(new_value) == 1:
-                        new_value = 'locked'
-                    else:
-                        new_value = 'unknown'
-                        
-                    print(" * * new_value for lock: " + str(new_value))
-                    print(" * * values for lock: " + str(values))
-                    
-                    self._type.append('Lock')
+                    self._type.append('OnOffSwitch')                    
                     self.properties[targetPropertyID] = MySensorsProperty(
                         self,
                         targetPropertyID,
                         {
-                            '@type': 'LockedProperty', #'OnOffProperty',
+                            '@type': 'OnOffProperty',
                             'label': new_description,
-                            'type': 'string',
-                            'enum': ['locked', 'unlocked', 'jammed', 'unknown'],
-                            'readOnly': True,
+                            'type': 'boolean',
                         },
                         values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
-                        
-                    self.actions: [
-                        {
-                          name: 'lock',
-                          metadata: {
-                            '@type': 'LockAction',
-                            title: 'Lock',
-                            description: 'Lock the locking mechanism',
-                          },
-                        },
-                        {
-                          name: 'unlock',
-                          metadata: {
-                            '@type': 'UnlockAction',
-                            title: 'Unlock',
-                            description: 'Unlock the locking mechanism',
-                          },
-                        },
-                      ]
 
+
+                if False: # temporarily disable this code.
+                    # This is experimental code to add support for the lock capability introduced in Mozilla WebThings Gateway 0.10.0. 
+                    # It turned out to make everything to complex, so for now locks will remain as normal boolean switches.
+                    if new_main_type == 19:                      # Lock    # Should be elif at the start of this line                    
+                        if new_sub_type == 36: # V_LOCK_STATUS
+                            #if "DoorSensor" in self._type:
+                            #    self._type.remove('DoorSensor')
+                    
+                            # Change the boolean values into string values
+                            print()
+                            print("LOCK VALUE = " + str(new_value))
+                            if int(new_value) == 0:
+                                new_value = 'unlocked'
+                            elif int(new_value) == 1:
+                                new_value = 'locked'
+                            else:
+                                new_value = 'unknown'
+                    
+                            self._type.append('Lock')
+                            self.properties[targetPropertyID] = MySensorsProperty(
+                                self,
+                                targetPropertyID,
+                                {
+                                    '@type': 'LockedProperty', #'OnOffProperty',
+                                    'label': new_description,
+                                    'type': 'string',
+                                    'enum': ['locked', 'unlocked', 'jammed', 'unknown'],
+                                    'readOnly': True,
+                                },
+                                values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
+                        
+                            print("calling add_action for lock")
+                            try:
+                                self.add_action('lock', {
+                                    '@type': 'LockAction',
+                                    'title': 'Lock',
+                                    'description': 'Lock the locking mechanism',
+                                })
+                                self.add_action('unlock', {
+                                    '@type': 'UnlockAction',
+                                    'title': 'Unlock',
+                                    'description': 'Unlock the locking mechanism',
+                                })
+                            except Exception as ex:
+                                print("Error adding actions to lock: " + str(ex))
+                        
+                            try:
+                                self.perform_action('unlock')
+                            except Exception as ex:
+                                print("performing action error: " + str(ex))
+                    
+                        
 
             elif new_main_type == 20:                      # Ir sender/receiver device
                 pass       
@@ -854,28 +887,11 @@ class MySensorsDevice(Device):
                                 'off',  # Same in mySensors (but capitalised)
                                 'heat', # MySensors value: HeatOn
                                 'cool', # MySensors value: CoolOn
-                                'auto'  # MySensors value: 'AutoChangeOver'
+                                'auto',  # MySensors value: 'AutoChangeOver'
                               ] 
                         },
                     values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
-                if new_sub_type == 47: # V_HVAC_FLOW_MODE
-                    #self._type.append('MultiLevelSwitch')
-                    self.properties[targetPropertyID] = MySensorsProperty(
-                        self,
-                        targetPropertyID,
-                        {
-                            #'@type': 'LevelProperty',
-                            'label': new_description,
-                            #'title': 'Mode',
-                            'type': 'string',
-                            'enum': [
-                                'Auto',
-                                'ContinuousOn',
-                                'PeriodicOn'
-                              ]
-                        },
-                    values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
-                if new_sub_type == 47: # V_HVAC_SPEED
+                if new_sub_type == 22: # V_HVAC_SPEED
                     #self._type.append('MultiLevelSwitch')
                     self.properties[targetPropertyID] = MySensorsProperty(
                         self,
@@ -889,7 +905,7 @@ class MySensorsDevice(Device):
                                 'Min',
                                 'Normal',
                                 'Max',
-                                'Auto'
+                                'Auto',
                               ]
                         },
                     values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
@@ -922,9 +938,45 @@ class MySensorsDevice(Device):
                             'maximum':150,
                             'type': 'number',
                             'unit': 'degree celsius',
-                            'multipleOf':0.1,
+                            'multipleOf':.5,
                         },
                     values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
+                if new_sub_type == 46: # V_HVAC_FLOW_MODE
+                    #self._type.append('MultiLevelSwitch')
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            #'@type': 'LevelProperty',
+                            'label': new_description,
+                            #'title': 'Mode',
+                            'type': 'string',
+                            'enum': [
+                                'Auto',
+                                'ContinuousOn',
+                                'PeriodicOn',
+                              ]
+                        },
+                    values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
+
+                # This is out of spec for MySensors:
+                if new_sub_type == 47: # V_TEXT
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            '@type': 'HeatingCoolingProperty',
+                            'label': new_description,
+                            'type': 'string',
+                            'enum': [
+                                'off',
+                                'heating',
+                                'cooling',
+                              ],
+                            'readOnly': True,
+                        },
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
+
 
 
             elif new_main_type == 30:                      # Volt meter
