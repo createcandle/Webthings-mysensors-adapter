@@ -58,3 +58,6 @@ Version 0.1.3 added
 
 Version 1.0.0
 - Support for timeout functionality. If a node doesn't respond withith a (user definable) timeframe, the node will set to disconnected.
+- Fixed bug in HVAC support that meant not all V_types were properly supported.
+- Support for thermostat capability of WebThings Gateway
+-  Support for new Lock capability has purposefully been held back for now.
