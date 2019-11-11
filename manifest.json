@@ -18,7 +18,6 @@
     "default": {
       "Gateway": "USB Serial gateway",
       "Metric": true,
-      "Show connection status": true,
       "Optimize things": true,
       "Timeout period": "60",
       "USB device name": "",
@@ -42,16 +41,12 @@
           "description": "Check the box to request metric units from the devices. Uncheck it to request they send data in imperial units instead.",
           "type": "boolean"
         },
-        "Show connection status": {
-          "description": "Enabling this will show your things as disconnected (slightly transparent) until an actual sign of life has been received from the device.",
-          "type": "boolean"
-        },
         "Optimize things": {
           "description": "Split up big things into separate smaller things. For example, a device with 4 toggles could become 4 devices with one toggle.",
           "type": "boolean"
         },
         "Timeout period": {
-          "description": "After how many minutes of inactivity should a device be reported as no longer connected?",
+          "description": "After how many minutes of inactivity should a device be reported as no longer connected? If you set this to 0, devices will always be set to fully available (even if they are not).",
           "type": "string"
         },
         "USB device name": {
@@ -78,7 +73,6 @@
       "required": [
         "Gateway",
         "Optimize things",
-        "Show connection status",
         "Metric",
 				"Timeout period",
         "Debugging"
