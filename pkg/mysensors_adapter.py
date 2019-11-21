@@ -60,12 +60,12 @@ class MySensorsAdapter(Adapter):
                     'mysensors-adapter-persistence.json'
                 )
         self.addon_path = os.path.join(os.path.expanduser('~'), '.mozilla-iot', 'addons', 'mysensors-adapter')
-        self.persistence_file_path = os.path.join(os.path.expanduser('~'), '.mozilla-iot', 'data', 'mysensors-adapter')
+        self.persistence_file_path = os.path.join(os.path.expanduser('~'), '.mozilla-iot', 'data', 'mysensors-adapter','mysensors-adapter-persistence.json')
         
         # Persistence files should move to a new location.
         try:
-            if os.path.isfile(self.old_persistence_file_path) and !os.path.isfile(self.persistence_file_path):
-                os.system('cp self.old_persistence_file_path self.persistence_file_path')
+            if os.path.isfile(self.old_persistence_file_path) and ( not os.path.isfile(self.persistence_file_path)):
+                os.system('cp ' + self.old_persistence_file_path + ' ' + self.persistence_file_path)
         except:
             print("Error copying old persistence file to new location")
         
