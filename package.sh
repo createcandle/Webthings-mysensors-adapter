@@ -9,7 +9,7 @@ version=$(grep version package.json | cut -d: -f2 | cut -d\" -f2)
 rm -rf *.tgz package
 rm -f SHA256SUMS
 rm -rf lib
-find . -type f -name '*._' -delete
+rm -rf ._*
 
 # Put package together
 mkdir package
