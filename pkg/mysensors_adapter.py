@@ -55,10 +55,16 @@ class MySensorsAdapter(Adapter):
 
         for path in _CONFIG_PATHS:
             if os.path.isdir(path):
+                self.old_persistence_file_path = os.path.join(
+                    path,
+                    'mysensors-adapter-persistence.json'
+                )
                 self.persistence_file_path = os.path.join(
                     path,
                     'mysensors-adapter-persistence.json'
                 )
+        self.addon_path = os.path.join(os.path.expanduser('~'), '.mozilla-iot', 'addons', 'mysensors-adapter')
+        self.persistence_file_path = os.path.join(os.path.expanduser('~'), '.mozilla-iot', 'data', 'mysensors-adapter')
         
         self.metric = True
         self.temperature_unit = 'degree celsius'

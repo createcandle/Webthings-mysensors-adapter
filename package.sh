@@ -9,7 +9,7 @@ version=$(grep version package.json | cut -d: -f2 | cut -d\" -f2)
 rm -rf *.tgz package
 rm -f SHA256SUMS
 rm -rf lib
-
+find . -type f -name '*._' -delete
 
 # Put package together
 mkdir package
@@ -32,3 +32,4 @@ cd -
 tar czf "mysensors-adapter-${version}.tgz" package
 sha256sum "mysensors-adapter-${version}.tgz"
 #sudo systemctl restart mozilla-iot-gateway.service
+
