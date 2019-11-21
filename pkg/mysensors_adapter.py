@@ -106,25 +106,30 @@ class MySensorsAdapter(Adapter):
 
     def clock(self):
         """ Runs every minute and updates which devices are still connected """
-        print("clock thread init")
+        if self.DEBUG:
+            print("clock thread init")
         while self.running:
 
             try:
-                print("CLOCK TICK")
+                if self.DEBUG:
+                    print("CLOCK TICK")
                 current_time = int(time.time())
                 for nodeIndex in self.last_seen_timestamps:
-                    print("- nodeIndexin last_seen_timestamps: " + str(nodeIndex))
+                    if self.DEBUG:
+                        print("- nodeIndexin last_seen_timestamps: " + str(nodeIndex))
                     
                     pymy_heartbeat = 0
                     if nodeIndex in self.GATEWAY.sensors:
-                        print("nodeIndex was in self.GATEWAY.sensors")
+                        if self.DEBUG:
+                            print("nodeIndex was in self.GATEWAY.sensors")
                         try:
                             # Some devices don't regularly send data, such as the smart lock, but they do send a 'heartbeat' signal to let us know they are still up and running.
                             # Here we check if the heartbeat counter has changed since the previous clock tick. If it has, it gets a fresh timestamp.
                             if int(self.GATEWAY.sensors[nodeIndex].heartbeat) != int(self.previous_heartbeats[nodeIndex]):
                                 self.previous_heartbeats[nodeIndex] = int(self.GATEWAY.sensors[nodeIndex].heartbeat)
                                 self.last_seen_timestamps[nodeIndex] = int(time.time())
-                                print("updated timeout timestamp using heartbeat data")
+                                if self.DEBUG:
+                                    print("updated timeout timestamp using heartbeat data")
                         except Exception as ex:
                             print("Error trying to get heartbeat for timeout: " + str(ex))
                     
@@ -132,20 +137,22 @@ class MySensorsAdapter(Adapter):
                     # This is only done for devices that have recently crossed the timeout threshold.
                     # A small window in which we tell the Gateway to set it to disconnected. This we we don't update the gateway's connection status too often.
                     if int(self.last_seen_timestamps[nodeIndex]) < current_time - self.timeout_seconds and int(self.last_seen_timestamps[nodeIndex]) > ((current_time - self.timeout_seconds) - 120): 
-                            # This device hasn't been seen in a while.
+                        # This device hasn't been seen in a while.
+                        if self.DEBUG:
                             print(str(nodeIndex) + " hasn't been seen in a while")
-                            try:
-                                targetDevice = self.get_device("MySensors-" + str(nodeIndex))
-                                if str(targetDevice) != 'None':
-                                    targetDevice.connected_notify(False)
-                                    if self.DEBUG:
-                                        print("-Setting device status to not connected.")
-                                else:
-                                    print("Strange, couldn't actually find the device to set it to disconnected")
-                            except:
+                        try:
+                            targetDevice = self.get_device("MySensors-" + str(nodeIndex))
+                            if str(targetDevice) != 'None':
+                                targetDevice.connected_notify(False)
+                                if self.DEBUG:
+                                    print("-Setting device status to not connected.")
+                            else:
+                                print("Strange, couldn't actually find the device to set it to disconnected")
+                        except:
                                 print("-Error updating state to disconnected")
                     else:
-                        print(str(nodeIndex) + " has been spotted recently enough")
+                        if self.DEBUG:
+                            print(str(nodeIndex) + " has been spotted recently enough")
             except Exception as ex:
                 print("Clock error: " + str(ex))
 
@@ -157,7 +164,8 @@ class MySensorsAdapter(Adapter):
 
 
     def recreate_from_persistence(self):
-        print("RECREATING DEVICES FROM PERSISTENCE")
+        if self.DEBUG:
+            print("RECREATING DEVICES FROM PERSISTENCE")
         
         try:
             with open(self.persistence_file_path) as f:
@@ -217,7 +225,8 @@ class MySensorsAdapter(Adapter):
                         try:
                             #print("self.show_connection_status = " + str(self.show_connection_status))
                             if self.timeout_seconds != 0:
-                                print("Showing device as disconnected. It will be set to 'connected' as soon as it actually makes a connection.")
+                                if self.adapter.DEBUG:
+                                    print("Showing device as disconnected. It will be set to 'connected' as soon as it actually makes a connection.")
                                 # Create a handle to the new device, and use its notify function.
                                 targetDevice = self.get_device("MySensors-" + str(nodeIndex))
                                 if str(targetDevice) != 'None':
@@ -235,7 +244,8 @@ class MySensorsAdapter(Adapter):
         except Exception as ex:
             print("Error during recreation from persistence: " + str(ex))
             
-        print("End of recreation function")
+        if self.DEBUG:
+            print("End of recreation function")
         return
 
 
@@ -548,7 +558,8 @@ class MySensorsAdapter(Adapter):
                         if extraDevice != None:
                             extraProperty = extraDevice.find_property(targetPropertyID)
                             extraProperty.update(new_value)
-                            print("Optimization: updated extra thing: MySensors-" + str(message.node_id) + "-" + str(message.child_id))
+                            if self.DEBUG:
+                                print("Optimization: updated extra thing: MySensors-" + str(message.node_id) + "-" + str(message.child_id))
                     except Exception as ex:
                         print("Error while updating extra device")            
 
@@ -562,7 +573,8 @@ class MySensorsAdapter(Adapter):
 
 
     def scan_usb_ports(self): # Scans for USB serial devices
-        print("Scanning USB serial devices")
+        if self.DEBUG:
+            print("Scanning USB serial devices")
         initial_serial_devices = set()
         result = {"state":"stable","port_id":[]}
         
@@ -588,13 +600,15 @@ class MySensorsAdapter(Adapter):
         # re-request that all nodes present themselves, but only is that thread isn't already running / doesn't already exist.
         try:
             if self.t:
-                print("Thread already existed")
+                if self.DEBUG:
+                    print("Thread already existed")
                 if not self.t.is_alive():
                     # Restarting request for presentation of nodes
                     self.t = threading.Thread(target=self.rerequest)
                     self.t.daemon = True
                     self.t.start()
-                    print("Re-request of node presentation restarted")
+                    if self.DEBUG:
+                        print("Re-request of node presentation restarted")
                 else:
                     if self.DEBUG:
                         print("Already busy re-requesting nodes.")
@@ -646,41 +660,31 @@ class MySensorsAdapter(Adapter):
             print("Error loading config from database")
             return
         
-        # Connection status preference
+        
+        
+        # Debug
         try:
-            if 'Show connection status' in config:
-                print("-Connection status is present in the config data.")
-                self.show_connection_status = bool(config['Show connection status'])
-                
             if 'Debugging' in config:
                 self.DEBUG = bool(config['Debugging'])
-                print("Debugging enabled: " + str(self.DEBUG))
+                if self.DEBUG:
+                    print("Debugging is set to: " + str(self.DEBUG))
             else:
                 self.DEBUG = False
                 
         except:
-            print("Error loading part 1 of settings")
+            print("Error loading debugging preference")
             
-        
-        # Optimize things
-        try:
-            if 'Optimize things' in config:
-                print("-Optimization preference is present in the config data.")
-                self.optimize = bool(config['Optimize things'])
-            else:
-                pass
-                #print("")
-        except Exception as ex:
-            print("Optimize things preference error:" + str(ex))
             
         
         # Timeout period
         try:
             if 'Timeout period' in config:
-                print("-Timeout period preference is present in the config data.")
+                if self.DEBUG:
+                    print("-Timeout period preference is present in the config data.")
                 self.timeout_seconds = int(config['Timeout period']) * 60
                 if self.timeout_seconds != 0:
-                    print("Starting the internal clock")
+                    if self.DEBUG:
+                        print("Starting the internal clock")
                     try:
                         t = threading.Thread(target=self.clock)
                         t.daemon = True
@@ -895,7 +899,8 @@ class MySensorsAdapter(Adapter):
             properties_to_remove_OnOff_from = []
             try:
                 for device_name in self.get_devices():
-                    print("__device_name = " + str(device_name))
+                    if self.DEBUG:
+                        print("__device_name = " + str(device_name))
                     onOff_count = 0
                     
                     try:

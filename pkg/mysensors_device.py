@@ -57,7 +57,8 @@ class MySensorsDevice(Device):
 
     def add_child(self, new_description, node_id, child_id, main_type, sub_type, values, value):
         #print()
-        print("+ Creating a property from child " + str(child_id))
+        if self.adapter.DEBUG:
+            print("+ Creating a property from child " + str(child_id))
         
         # PREFIX
         # First, let's see if there's a prefix. If there is, we should scrape it from the child's value object
