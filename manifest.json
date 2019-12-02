@@ -24,6 +24,8 @@
       "IP address": "",
       "MQTT password": "",
       "MQTT username": "",
+      "MQTT In prefix": "mygateway1-out",
+      "MQTT Out prefix": "mygateway1-in",
       "Debugging": false
     },
     "schema": {
@@ -63,6 +65,14 @@
         },
         "MQTT username": {
           "description": "The username for MQTT security.",
+          "type": "string"
+        },
+        "MQTT In prefix": {
+          "description": "The prefix of topic income(from radio) messages.",
+          "type": "string"
+        },
+        "MQTT Out prefix": {
+          "description": "The prefix of topic for outcome(to radio) messages.",
           "type": "string"
         },
         "Debugging": {
