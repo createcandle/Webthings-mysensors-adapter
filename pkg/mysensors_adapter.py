@@ -36,8 +36,8 @@ _CONFIG_PATHS = [
 if 'MOZIOT_HOME' in os.environ:
     _CONFIG_PATHS.insert(0, os.path.join(os.environ['MOZIOT_HOME'], 'config'))
 
-__MQTT_IN_PREFIX_CFG = "MQTT In prefix"
-__MQTT_OUT_PREFIX_CFG = "MQTT Out prefix"
+_MQTT_IN_PREFIX_CFG = "MQTT In prefix"
+_MQTT_OUT_PREFIX_CFG = "MQTT Out prefix"
 
 class MySensorsAdapter(Adapter):
     """Adapter for MySensors"""
@@ -649,15 +649,15 @@ class MySensorsAdapter(Adapter):
 
     def __add_MQTT_prefixes_from_config(self, config):
 
-        if __MQTT_IN_PREFIX_CFG in config:
-            self.MQTT_In_Prefix = str(config[__MQTT_IN_PREFIX_CFG])
+        if _MQTT_IN_PREFIX_CFG in config:
+            self.MQTT_In_Prefix = str(config[_MQTT_IN_PREFIX_CFG])
         else:
-            print("{0} has not been set".format(__MQTT_IN_PREFIX_CFG))
+            print("{0} has not been set".format(_MQTT_IN_PREFIX_CFG))
 
-        if __MQTT_OUT_PREFIX_CFG in config:
-            self.MQTT_Out_prefix = str(config[__MQTT_OUT_PREFIX_CFG])
+        if _MQTT_OUT_PREFIX_CFG in config:
+            self.MQTT_Out_prefix = str(config[_MQTT_OUT_PREFIX_CFG])
         else:
-            print("{0} has not been set".format(__MQTT_OUT_PREFIX_CFG))
+            print("{0} has not been set".format(_MQTT_OUT_PREFIX_CFG))
 
 
     def add_from_config(self):
