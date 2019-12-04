@@ -68,7 +68,7 @@
           "type": "string"
         },
         "MQTT In prefix": {
-          "description": "The prefix of topic income(from radio) messages.",
+          "description": "The prefix of topic for income(from radio) messages.",
           "type": "string"
         },
         "MQTT Out prefix": {
