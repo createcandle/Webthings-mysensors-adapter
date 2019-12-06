@@ -63,7 +63,8 @@ class MySensorsProperty(Property):
         """
         
         #if device.adapter.DEBUG:
-        print("<< Sending update to MySensors network")
+        if self.device.adapter.DEBUG:
+            print("<< Sending update to MySensors network")
         #print("->name " + str(self.name))
         #print("->devi " + str(self.device))
         #print("->node_id " + str(self.node_id))
@@ -117,7 +118,8 @@ class MySensorsProperty(Property):
         value -- the value to update
         """
         
-        print("property -> update")
+        if self.device.adapter.DEBUG:
+            print("property -> update")
         
         try:
             
