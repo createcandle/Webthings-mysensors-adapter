@@ -36,7 +36,8 @@ _CONFIG_PATHS = [
 if 'MOZIOT_HOME' in os.environ:
     _CONFIG_PATHS.insert(0, os.path.join(os.environ['MOZIOT_HOME'], 'config'))
 
-
+_MQTT_IN_PREFIX_CFG = "MQTT In prefix"
+_MQTT_OUT_PREFIX_CFG = "MQTT Out prefix"
 
 class MySensorsAdapter(Adapter):
     """Adapter for MySensors"""
@@ -83,6 +84,9 @@ class MySensorsAdapter(Adapter):
         
         self.MQTT_username = ""
         self.MQTT_password = ""
+
+        self.MQTT_In_Prefix = 'mygateway1-out'
+        self.MQTT_Out_prefix = 'mygateway1-in'
         
         self.things_list = []
         
@@ -302,8 +306,8 @@ class MySensorsAdapter(Adapter):
                 #    protocol_version='2.2')
                 
                 try:
-                    self.GATEWAY = mysensors.AsyncMQTTGateway(self.MQTTC.publish, self.MQTTC.subscribe, in_prefix='mygateway1-out',
-                        out_prefix='mygateway1-in', retain=True, event_callback=self.mysensors_message,
+                    self.GATEWAY = mysensors.AsyncMQTTGateway(self.MQTTC.publish, self.MQTTC.subscribe, in_prefix=self.MQTT_In_Prefix,
+                        out_prefix=self.MQTT_Out_prefix, retain=True, event_callback=self.mysensors_message,
                         persistence=True, persistence_file=self.persistence_file_path, 
                         protocol_version='2.2')
                 except Exception as ex:
@@ -643,6 +647,18 @@ class MySensorsAdapter(Adapter):
             print("error while manually re-requesting presentations")
 
 
+    def __add_MQTT_prefixes_from_config(self, config):
+
+        if _MQTT_IN_PREFIX_CFG in config:
+            self.MQTT_In_Prefix = str(config[_MQTT_IN_PREFIX_CFG])
+        else:
+            print("{0} has not been set".format(_MQTT_IN_PREFIX_CFG))
+
+        if _MQTT_OUT_PREFIX_CFG in config:
+            self.MQTT_Out_prefix = str(config[_MQTT_OUT_PREFIX_CFG])
+        else:
+            print("{0} has not been set".format(_MQTT_OUT_PREFIX_CFG))
+
 
     def add_from_config(self):
         """Attempt to add all configured devices."""
@@ -727,7 +743,9 @@ class MySensorsAdapter(Adapter):
                 
         except Exception as ex:
             print("MQTT username and/or password error:" + str(ex))
-            
+
+        # MQTT In/Out topic prefix
+        self.__add_MQTT_prefixes_from_config(config)
             
         # Now that that we know the desired connection status preference, we quickly recreate all devices.
         try:
