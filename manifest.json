@@ -24,6 +24,8 @@
       "IP address": "",
       "MQTT password": "",
       "MQTT username": "",
+      "MQTT in prefix": "mygateway1-out",
+      "MQTT out prefix": "mygateway1-in",
       "Debugging": false
     },
     "schema": {
@@ -65,6 +67,14 @@
           "description": "The username for MQTT security.",
           "type": "string"
         },
+        "MQTT in prefix": {
+          "description": "The topic prefix for incoming messages messages.",
+          "type": "string"
+        },
+        "MQTT out prefix": {
+          "description": "The topic prefix for outgoing messages.",
+          "type": "string"
+        },
         "Debugging": {
           "description": "Debugging allows you to diagnose any issues with the add-on. If enabled it will result in a lot more debug data in the internal log (which can be found under settings -> developer -> view internal logs).",
           "type": "boolean"
@@ -81,5 +91,5 @@
     }
   },
   "short_name": "MySensors",
-  "version": "1.0.1"
+  "version": "1.0.2"
 }

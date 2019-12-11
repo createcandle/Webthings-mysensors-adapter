@@ -1,7 +1,7 @@
 {
   "name": "mysensors-adapter",
   "display_name": "MySensors",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "MySensors add-on for Mozilla WebThings Gateway",
   "author": "CreateCandle",
   "main": "main.py",
@@ -50,6 +50,8 @@
       "IP address": "",
       "MQTT username": "",
       "MQTT password": "",
+      "MQTT in prefix": "mygateway1-out",
+      "MQTT out prefix": "mygateway1-in",
       "Debugging": false
     },
     "schema": {
@@ -103,6 +105,14 @@
         "MQTT password": {
           "type": "string",
           "description": "The password for MQTT security."
+        },
+        "MQTT in prefix": {
+          "description": "The topic prefix for incoming messages messages.",
+          "type": "string"
+        },
+        "MQTT out prefix": {
+          "description": "The topic prefix for outgoing messages.",
+          "type": "string"
         },
         "Debugging": {
           "type": "boolean",

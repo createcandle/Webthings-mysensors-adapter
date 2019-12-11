@@ -83,6 +83,8 @@ class MySensorsAdapter(Adapter):
         
         self.MQTT_username = ""
         self.MQTT_password = ""
+        self.MQTT_out_prefix = "mygateway1-out"
+        self.MQTT_in_prefix = "mygateway1-in"
         
         self.things_list = []
         
@@ -302,8 +304,8 @@ class MySensorsAdapter(Adapter):
                 #    protocol_version='2.2')
                 
                 try:
-                    self.GATEWAY = mysensors.AsyncMQTTGateway(self.MQTTC.publish, self.MQTTC.subscribe, in_prefix='mygateway1-out',
-                        out_prefix='mygateway1-in', retain=True, event_callback=self.mysensors_message,
+                    self.GATEWAY = mysensors.AsyncMQTTGateway(self.MQTTC.publish, self.MQTTC.subscribe, in_prefix=self.MQTT_In_Prefix,
+                        out_prefix=self.MQTT_Out_prefix, retain=True, event_callback=self.mysensors_message,
                         persistence=True, persistence_file=self.persistence_file_path, 
                         protocol_version='2.2')
                 except Exception as ex:
@@ -730,6 +732,23 @@ class MySensorsAdapter(Adapter):
             print("MQTT username and/or password error:" + str(ex))
             
             
+        # MQTT prefixes
+        try:
+            if 'MQTT in prefix' in config:
+                self.MQTT_in_prefix = str(config['MQTT in prefix'])
+            else:
+                print("No MQTT in prefix set")
+
+            if 'MQTT out prefix' in config:
+                self.MQTT_out_prefix = str(config['MQTT out prefix'])
+            else:
+                print("No MQTT out prefix set")
+                
+        except Exception as ex:
+            print("MQTT username and/or password error:" + str(ex))
+            
+            
+            
         # Now that that we know the desired connection status preference, we quickly recreate all devices.
         try:
             self.recreate_from_persistence()
@@ -902,7 +921,7 @@ class MySensorsAdapter(Adapter):
                 for device_name in self.get_devices():
                     if self.DEBUG:
                         print("__device_name = " + str(device_name))
-                    onOff_count = 0
+                    #onOff_count = 0
                     
                     try:
                         targetDevice = self.get_device(device_name)
@@ -914,29 +933,32 @@ class MySensorsAdapter(Adapter):
 
                             try:
                                 #print("property_object.description[@type] = " + str(property_object.description['@type']))
-                                if property_object.description['@type'] == "OnOffProperty":
-                                    onOff_count += 1
-                            except:
+                                
+                                if int(property_object.child_id) > 100:
+                                    
+                                #if property_object.description['@type'] == "OnOffProperty":
+                                #    onOff_count += 1
+                            #except:
                                 #print("no @type set")
-                                pass
+                            #    pass
                             
                         #print("onOff_count = " + str(onOff_count))
                         
-                    except Exception as ex:
-                        print("Error scanning for optimizable devices: " + str(ex))
+                    #except Exception as ex:
+                    #    print("Error scanning for optimizable devices: " + str(ex))
                     
                     
-                    if onOff_count > 1:
-                        onOff_count = 0
-                        for device_property in targetDevice.get_property_descriptions():
-                            property_object = targetDevice.find_property(device_property)
-                            try:
-                                if property_object.description['@type'] == "OnOffProperty":
-                                    onOff_count += 1
-                                    
-                                    if onOff_count > 1:
+                    #if onOff_count > 1:
+                    #    onOff_count = 0
+                    #    for device_property in targetDevice.get_property_descriptions():
+                    #        property_object = targetDevice.find_property(device_property)
+                    #        try:
+                                #if property_object.description['@type'] == "OnOffProperty":
+                                #    onOff_count += 1
+                                #    
+                                #    if onOff_count > 1:
                                         # Set the @type of the original device to None? That solves a lot of issues: it won't be copied again, and it makes the original device more predictable.. in a way. Only one toggle will be the main one.
-                                        properties_to_remove_OnOff_from.append(property_object)
+                                #        properties_to_remove_OnOff_from.append(property_object)
                                         
                                     # Generate a predictable name
                                     extra_name = str(property_object.node_id) + "-" + str(property_object.child_id)
@@ -969,6 +991,8 @@ class MySensorsAdapter(Adapter):
 
                             except Exception as ex:
                                 print("Error cloning: " + str(ex))
+                    except Exception as ex:
+                        print("Error getting target device while cloning: " + str(ex))
                     
                     
             except Exception as ex:
