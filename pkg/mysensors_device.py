@@ -475,6 +475,53 @@ class MySensorsDevice(Device):
                             'multipleOf':0.01,
                         },
                         values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
+                if new_sub_type == 18: # V_KWH
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            'label': new_description,
+                            'type': 'number',
+                            'unit': 'kwh',
+                            'readOnly': True,
+                            'multipleOf':0.001,
+                        },
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
+                if new_sub_type == 54: # V_VAR
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            'label': new_description,
+                            'type': 'number',
+                            'unit': 'var',
+                            'readOnly': True,
+                            'multipleOf':0.01,
+                        },
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
+                if new_sub_type == 55: # V_VA
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            'label': new_description,
+                            'type': 'number',
+                            'unit': 'va',
+                            'readOnly': True,
+                            'multipleOf':0.01,
+                        },
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
+                if new_sub_type == 56: # V_POWER_FACTOR
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            'label': new_description,
+                            'type': 'number',
+                            'readOnly': True,
+                            'multipleOf':0.01,
+                        },
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
 
 
 
