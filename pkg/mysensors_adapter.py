@@ -304,8 +304,8 @@ class MySensorsAdapter(Adapter):
                 #    protocol_version='2.2')
                 
                 try:
-                    self.GATEWAY = mysensors.AsyncMQTTGateway(self.MQTTC.publish, self.MQTTC.subscribe, in_prefix=self.MQTT_In_Prefix,
-                        out_prefix=self.MQTT_Out_prefix, retain=True, event_callback=self.mysensors_message,
+                    self.GATEWAY = mysensors.AsyncMQTTGateway(self.MQTTC.publish, self.MQTTC.subscribe, in_prefix=self.MQTT_in_prefix,
+                        out_prefix=self.MQTT_out_prefix, retain=True, event_callback=self.mysensors_message,
                         persistence=True, persistence_file=self.persistence_file_path, 
                         protocol_version='2.2')
                 except Exception as ex:
