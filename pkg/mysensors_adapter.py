@@ -118,7 +118,7 @@ class MySensorsAdapter(Adapter):
                 current_time = int(time.time())
                 for nodeIndex in self.last_seen_timestamps:
                     if self.DEBUG:
-                        print("- nodeIndexin last_seen_timestamps: " + str(nodeIndex))
+                        print("- nodeIndex in last_seen_timestamps: " + str(nodeIndex))
                     
                     pymy_heartbeat = 0
                     if nodeIndex in self.GATEWAY.sensors:
@@ -137,7 +137,7 @@ class MySensorsAdapter(Adapter):
                     
                     # Has the devices recently given some sign that it's alive? If not, set it to disconnected.
                     # This is only done for devices that have recently crossed the timeout threshold.
-                    # A small window in which we tell the Gateway to set it to disconnected. This we we don't update the gateway's connection status too often.
+                    # A small window in which we tell the Gateway to set it to disconnected. This way we don't update the gateway's connection status too often.
                     if int(self.last_seen_timestamps[nodeIndex]) < current_time - self.timeout_seconds and int(self.last_seen_timestamps[nodeIndex]) > ((current_time - self.timeout_seconds) - 120): 
                         # This device hasn't been seen in a while.
                         if self.DEBUG:
@@ -145,7 +145,9 @@ class MySensorsAdapter(Adapter):
                         try:
                             targetDevice = self.get_device("MySensors-" + str(nodeIndex))
                             if str(targetDevice) != 'None':
-                                targetDevice.connected_notify(False)
+                                if targetDevice.connected == True:
+                                    targetDevice.connected = False
+                                    targetDevice.connected_notify(False)
                                 if self.DEBUG:
                                     print("-Setting device status to not connected.")
                             else:
@@ -155,6 +157,7 @@ class MySensorsAdapter(Adapter):
                     else:
                         if self.DEBUG:
                             print(str(nodeIndex) + " has been spotted recently enough")
+                            
             except Exception as ex:
                 print("Clock error: " + str(ex))
 
@@ -227,11 +230,12 @@ class MySensorsAdapter(Adapter):
                         try:
                             #print("self.show_connection_status = " + str(self.show_connection_status))
                             if self.timeout_seconds != 0:
-                                if self.adapter.DEBUG:
+                                if self.DEBUG:
                                     print("Showing device as disconnected. It will be set to 'connected' as soon as it actually makes a connection.")
                                 # Create a handle to the new device, and use its notify function.
                                 targetDevice = self.get_device("MySensors-" + str(nodeIndex))
                                 if str(targetDevice) != 'None':
+                                    targetDevice.connected = False
                                     targetDevice.connected_notify(False)
                                     if self.DEBUG:
                                         print("-Setting initial device status to not connected.")
@@ -290,11 +294,14 @@ class MySensorsAdapter(Adapter):
                     #print("MQTT Creating object")
                     self.MQTTC = MQTT(ip_address, 1883, 60)
                     
+                    #self.MQTTC = mqtt.Client()
+                    #self.MQTTC.connect(ip_address, 1883, 60)
+                    
                     if self.MQTT_username != '' and self.MQTT_password != '':
-                        self.MQTTC.username_pw_set(username=self.MQTT_username,password=self.MQTT_password)
+                        self.MQTTC.authenticate(username=self.MQTT_username,password=self.MQTT_password)
                         print("-set MQTT username and password")
                     #print("MQTT will start")
-                    self.MQTTC.start()
+                    self.MQTTC.loop_start()
                 except Exception as ex:
                     print("MQTT object error: " + str(ex))
                     
@@ -304,8 +311,8 @@ class MySensorsAdapter(Adapter):
                 #    protocol_version='2.2')
                 
                 try:
-                    self.GATEWAY = mysensors.AsyncMQTTGateway(self.MQTTC.publish, self.MQTTC.subscribe, in_prefix=self.MQTT_In_Prefix,
-                        out_prefix=self.MQTT_Out_prefix, retain=True, event_callback=self.mysensors_message,
+                    self.GATEWAY = mysensors.AsyncMQTTGateway(self.MQTTC.publish, self.MQTTC.subscribe, in_prefix=self.MQTT_in_Prefix,
+                        out_prefix=self.MQTT_out_prefix, retain=True, event_callback=self.mysensors_message,
                         persistence=True, persistence_file=self.persistence_file_path, 
                         protocol_version='2.2')
                 except Exception as ex:
@@ -434,9 +441,12 @@ class MySensorsAdapter(Adapter):
                             except Exception as ex:
                                 print("-Failed to add new device from internal presentation: " + str(ex))
                     else:
-                        if targetDevice.connected == False:
-                            targetDevice.connected = True
-                            targetDevice.connected_notify(True)
+                        try:
+                            if targetDevice.connected == False:
+                                targetDevice.connected = True
+                                targetDevice.connected_notify(True)
+                        except:
+                            print("Error changing target device connection status")
 
 
                 #SET
@@ -1042,6 +1052,10 @@ class MQTT(object):
         self.topics = {}
         self._mqttc = mqtt.Client()
         self._mqttc.connect(broker, port, keepalive)
+
+    def authenticate(self,username,password):
+        """ Authenticate with username and password """
+        self._mqttc.username_pw_set(username, password)
 
     def publish(self, topic, payload, qos, retain):
         """Publish an MQTT message."""

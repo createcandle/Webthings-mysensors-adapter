@@ -45,7 +45,7 @@ class MySensorsDevice(Device):
         self._type = [] # TODO: isn't this deprecated?
         self.properties = {}
         #print("device self.properties at init: " + str(self.properties))
-        self.connected = False # Will be set to true once we receive an actual message from the node. # TODO: is this still used?
+        self.connected = False # Will be set to true once we receive an actual message from the node.
         
         self.links = []
         
