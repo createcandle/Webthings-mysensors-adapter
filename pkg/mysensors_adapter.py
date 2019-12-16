@@ -944,7 +944,7 @@ class MySensorsAdapter(Adapter):
                             try:
                                 #print("property_object.description[@type] = " + str(property_object.description['@type']))
                                 
-                                if int(property_object.child_id) > 100:
+                                if int(property_object.child_id) >= 200:
                                     
                                 #if property_object.description['@type'] == "OnOffProperty":
                                 #    onOff_count += 1
