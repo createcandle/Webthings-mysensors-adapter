@@ -301,7 +301,7 @@ class MySensorsAdapter(Adapter):
                         self.MQTTC.authenticate(username=self.MQTT_username,password=self.MQTT_password)
                         print("-set MQTT username and password")
                     #print("MQTT will start")
-                    self.MQTTC.loop_start()
+                    self.MQTTC.start()
                 except Exception as ex:
                     print("MQTT object error: " + str(ex))
                     
