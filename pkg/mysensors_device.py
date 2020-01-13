@@ -832,11 +832,14 @@ class MySensorsDevice(Device):
 
             elif new_main_type == 24:                      # S_DUST
                 if new_sub_type == 37: # V_LEVEL
+                    #if 'MultiLevelSensor' not in self._type:
+                    self._type.append('MultiLevelSensor')
                     if prefix != '':
                         self.properties[targetPropertyID] = MySensorsProperty(
                             self,
                             targetPropertyID,
                             {
+                                '@type': 'LevelProperty',
                                 'label': new_description,
                                 'type': 'number',
                                 'unit': prefix,
@@ -921,6 +924,18 @@ class MySensorsDevice(Device):
 
 
             elif new_main_type == 29:                      # Thermostat / HVAC
+                if new_sub_type == 2: # V_STATUS
+                    #self._type.append('OnOffSwitch')           
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            #'@type': 'OnOffProperty',
+                            'label': new_description,
+                            'type': 'boolean',
+                            'readOnly': True,
+                        },
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
                 if new_sub_type == 21: # V_HVAC_FLOW_STATE
                     self._type.append('Thermostat')
                     self.properties[targetPropertyID] = MySensorsProperty(

@@ -62,6 +62,8 @@ class MySensorsAdapter(Adapter):
         self.addon_path = os.path.join(os.path.expanduser('~'), '.mozilla-iot', 'addons', 'mysensors-adapter')
         self.persistence_file_path = os.path.join(os.path.expanduser('~'), '.mozilla-iot', 'data', 'mysensors-adapter','mysensors-adapter-persistence.json')
         
+        print("User profile data: " + str(self.user_profile))
+        
         # Persistence files should move to a new location.
         try:
             if os.path.isfile(self.old_persistence_file_path) and ( not os.path.isfile(self.persistence_file_path)):
@@ -127,13 +129,19 @@ class MySensorsAdapter(Adapter):
                         try:
                             # Some devices don't regularly send data, such as the smart lock, but they do send a 'heartbeat' signal to let us know they are still up and running.
                             # Here we check if the heartbeat counter has changed since the previous clock tick. If it has, it gets a fresh timestamp.
-                            if int(self.GATEWAY.sensors[nodeIndex].heartbeat) != int(self.previous_heartbeats[nodeIndex]):
-                                self.previous_heartbeats[nodeIndex] = int(self.GATEWAY.sensors[nodeIndex].heartbeat)
-                                self.last_seen_timestamps[nodeIndex] = int(time.time())
+                            if hasattr(self.GATEWAY.sensors[nodeIndex], 'heartbeat'):
                                 if self.DEBUG:
-                                    print("updated timeout timestamp using heartbeat data")
+                                    print("This device has sent heartbeat signals")
+                                if int(self.GATEWAY.sensors[nodeIndex].heartbeat) != int(self.previous_heartbeats[nodeIndex]):
+                                    self.previous_heartbeats[nodeIndex] = int(self.GATEWAY.sensors[nodeIndex].heartbeat)
+                                    self.last_seen_timestamps[nodeIndex] = int(time.time())
+                                    if self.DEBUG:
+                                        print("updated timeout timestamp using heartbeat data")
+                            else:
+                                if self.DEBUG:
+                                    print("This device does not seem to send a heartbeat.")
                         except Exception as ex:
-                            print("Error trying to get heartbeat for timeout: " + str(ex))
+                            print("Error trying to get heartbeat for timeout (device doesn't send heartbeats?): " + str(ex))
                     
                     # Has the devices recently given some sign that it's alive? If not, set it to disconnected.
                     # This is only done for devices that have recently crossed the timeout threshold.
@@ -412,14 +420,17 @@ class MySensorsAdapter(Adapter):
             if message.node_id != 0:
                 
                 # Add a last-seen timestamp (if the feature is enabled)
-                if self.timeout_seconds != 0:
-                    try:
-                        if self.DEBUG:
+                try:
+                    if self.timeout_seconds != 0:
+                        try:
+                            #if self.DEBUG:
                             print(str(message.node_id) + " gets timestamp " + str(int(time.time())))
-                        self.last_seen_timestamps.update( { message.node_id: int(time.time()) } )
-                    except Exception as ex:
-                        print("error updating timestamp dictionary: " + str(ex))
-                
+                            self.last_seen_timestamps.update( { message.node_id: int(time.time()) } )
+                        except Exception as ex:
+                            print("error updating timestamp dictionary: " + str(ex))
+                except Exception as ex:
+                    print("Error updating last seen timestamp from incoming message: " + str(ex))
+                    
                 # first we check if the incoming node_id already has already been presented to the WebThings Gateway.
                 try:
                     #print("get_devices = " + str(self.get_devices()))
