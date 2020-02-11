@@ -60,3 +60,7 @@ Version 1.0.0
 - Fixed bug in HVAC support that meant not all V_types were properly supported.
 - Support for thermostat capability of WebThings Gateway
 -  Support for new Lock capability has purposefully been held back for now.
+
+
+Version 1.0.3
+- Attempt to make MQTT work (something I don't use myself, so anyone willing to help is welcome to)
