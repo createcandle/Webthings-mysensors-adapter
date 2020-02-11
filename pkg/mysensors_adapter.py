@@ -132,7 +132,7 @@ class MySensorsAdapter(Adapter):
                             if hasattr(self.GATEWAY.sensors[nodeIndex], 'heartbeat'):
                                 if self.DEBUG:
                                     print("This device has sent heartbeat signals")
-                                if int(self.GATEWAY.sensors[nodeIndex].heartbeat) != int(self.previous_heartbeats[nodeIndex]):
+                                if int(self.GATEWAY.sensors[nodeIndex].heartbeat) != int(self.previous_heartbeats[nodeIndex]) and int(self.GATEWAY.sensors[nodeIndex].heartbeat) != 0:
                                     self.previous_heartbeats[nodeIndex] = int(self.GATEWAY.sensors[nodeIndex].heartbeat)
                                     self.last_seen_timestamps[nodeIndex] = int(time.time())
                                     if self.DEBUG:
@@ -229,7 +229,7 @@ class MySensorsAdapter(Adapter):
                                     for valueIndex in child['values']:
                                         #print("child['values'][" + str(valueIndex) + "] = " + str(child['values'][valueIndex]))
                                         if int(valueIndex) != 43: #Avoid V_UNIT_PREFIX
-                                            device.add_child(child['description'], nodeIndex, childIndex, child['type'], valueIndex, child['values'], child['values'][valueIndex])
+                                            device.add_child(child['description'], nodeIndex, childIndex, child['type'], valueIndex, child['values'], null) #child['values'][valueIndex])
                                             
                         # Finally, now that the device is complete, we present it to the Gateway.
                         self.handle_device_added(device)
