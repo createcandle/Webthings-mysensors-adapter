@@ -17,10 +17,9 @@ https://www.createcandle.com
 
 
 # Status
-This is beta code. It currently supports most sensor inputs, as well as most actuators.
+It currently supports most sensor inputs, as well as most actuators.
 
 Missing or just partially implemented are:
-- Thermostat/HVAC devices. The Gateway does not support them yet.
 - IR sender/receiver
 
 
