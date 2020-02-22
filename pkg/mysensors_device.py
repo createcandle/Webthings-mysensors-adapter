@@ -103,7 +103,10 @@ class MySensorsDevice(Device):
             #new_value = str(value)
             # 
             
-            if is_a_number(value):
+            
+            if value == None:
+                new_value = None
+            elif is_a_number(value):
                 new_value = get_int_or_float(value)
             else:
                 new_value = str(value)

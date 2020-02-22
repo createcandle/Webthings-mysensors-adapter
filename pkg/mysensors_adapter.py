@@ -88,7 +88,7 @@ class MySensorsAdapter(Adapter):
         self.MQTT_out_prefix = "mygateway1-out"
         self.MQTT_in_prefix = "mygateway1-in"
         
-        self.things_list = []
+        #self.things_list = [] # not used?
         
         self.timeout_seconds = 0 # the default is a day
         self.last_seen_timestamps = {}
@@ -229,7 +229,7 @@ class MySensorsAdapter(Adapter):
                                     for valueIndex in child['values']:
                                         #print("child['values'][" + str(valueIndex) + "] = " + str(child['values'][valueIndex]))
                                         if int(valueIndex) != 43: #Avoid V_UNIT_PREFIX
-                                            device.add_child(child['description'], nodeIndex, childIndex, child['type'], valueIndex, child['values'], null) #child['values'][valueIndex])
+                                            device.add_child(child['description'], nodeIndex, childIndex, child['type'], valueIndex, child['values'], None) #child['values'][valueIndex])
                                             
                         # Finally, now that the device is complete, we present it to the Gateway.
                         self.handle_device_added(device)
@@ -927,6 +927,12 @@ class MySensorsAdapter(Adapter):
         except:
             print("Error while pruning")
         """
+
+
+    def handle_device_saved(self, device_id, device):
+        print("handle_device_saved ID = " + str(device_id))
+        print("handle_device_saved device = " + str(device))
+
 
     def send_in_the_clones(self):
         # Generate additional buttons if so desired.
