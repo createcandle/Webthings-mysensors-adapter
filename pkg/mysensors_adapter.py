@@ -423,8 +423,8 @@ class MySensorsAdapter(Adapter):
                 try:
                     if self.timeout_seconds != 0:
                         try:
-                            #if self.DEBUG:
-                            print(str(message.node_id) + " gets timestamp " + str(int(time.time())))
+                            if self.DEBUG:
+                                print(str(message.node_id) + " gets timestamp " + str(int(time.time())))
                             self.last_seen_timestamps.update( { message.node_id: int(time.time()) } )
                         except Exception as ex:
                             print("error updating timestamp dictionary: " + str(ex))
@@ -575,7 +575,7 @@ class MySensorsAdapter(Adapter):
                             if targetProperty != None:
                                 targetProperty.update(new_value)
                 
-                # Try to also update the extra device/property, if it exists.
+                # Try to also update the extra cloned device/property, if it exists.
                 if self.optimize:
                     try:
                         extraDevice = self.get_device("MySensors-" + str(message.node_id) + "-" + str(message.child_id))

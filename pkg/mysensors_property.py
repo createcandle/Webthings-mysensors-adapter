@@ -79,9 +79,12 @@ class MySensorsProperty(Property):
             intNodeID = int(float(self.node_id))
             intChildID = int(float(self.child_id))
             intSubchildID = int(float(self.subchild_id))
-
-            if is_a_number(value):
-                #print("-will be sent as int or float")
+            
+            print("self.subchild_id = " + str(self.subchild_id))
+            
+            if is_a_number(value) and self.subchild_id != 47: # 47 is V_TEXT
+                if self.device.adapter.DEBUG:
+                    print("-will be sent as int or float")
                 new_value = get_int_or_float(value)
                 #new_value = float( int( new_value * 100) / 100)
                 if self.device.adapter.DEBUG:
