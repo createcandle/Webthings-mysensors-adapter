@@ -115,17 +115,17 @@ class MySensorsAdapter(Adapter):
         while self.running:
 
             try:
-                if self.DEBUG:
-                    print("CLOCK TICK")
                 current_time = int(time.time())
+                #if self.DEBUG:
+                #    print("CLOCK TICK " + str(current_time) )
                 for nodeIndex in self.last_seen_timestamps:
-                    if self.DEBUG:
-                        print("- nodeIndex in last_seen_timestamps: " + str(nodeIndex))
+                    #if self.DEBUG:
+                    #    print("- nodeIndex in last_seen_timestamps: " + str(nodeIndex))
                     
                     pymy_heartbeat = 0
                     if nodeIndex in self.GATEWAY.sensors:
-                        if self.DEBUG:
-                            print("nodeIndex was in self.GATEWAY.sensors")
+                        #if self.DEBUG:
+                        #    print("nodeIndex was in self.GATEWAY.sensors")
                         try:
                             # Some devices don't regularly send data, such as the smart lock, but they do send a 'heartbeat' signal to let us know they are still up and running.
                             # Here we check if the heartbeat counter has changed since the previous clock tick. If it has, it gets a fresh timestamp.
@@ -140,16 +140,19 @@ class MySensorsAdapter(Adapter):
                             else:
                                 if self.DEBUG:
                                     print("This device does not seem to send a heartbeat.")
+                        
                         except Exception as ex:
                             print("Error trying to get heartbeat for timeout (device doesn't send heartbeats?): " + str(ex))
                     
                     # Has the devices recently given some sign that it's alive? If not, set it to disconnected.
                     # This is only done for devices that have recently crossed the timeout threshold.
                     # A small window in which we tell the Gateway to set it to disconnected. This way we don't update the gateway's connection status too often.
-                    if int(self.last_seen_timestamps[nodeIndex]) < current_time - self.timeout_seconds and int(self.last_seen_timestamps[nodeIndex]) > ((current_time - self.timeout_seconds) - 120): 
+                    if self.DEBUG:
+                        print(str(nodeIndex) + " was last seen " + str( current_time - int(self.last_seen_timestamps[nodeIndex]) ) +  " seconds ago. Timeout threshold: " + str(self.timeout_seconds))
+                    
+                    if int(self.last_seen_timestamps[nodeIndex]) < (current_time - self.timeout_seconds): # and int(self.last_seen_timestamps[nodeIndex]) > ((current_time - self.timeout_seconds) - 120): 
                         # This device hasn't been seen in a while.
-                        if self.DEBUG:
-                            print(str(nodeIndex) + " hasn't been seen in a while")
+
                         try:
                             targetDevice = self.get_device("MySensors-" + str(nodeIndex))
                             if str(targetDevice) != 'None':
@@ -170,7 +173,8 @@ class MySensorsAdapter(Adapter):
                 print("Clock error: " + str(ex))
 
             time.sleep(60)
-        
+        if self.DEBUG:
+            print("Clock thread ending")
 
 
 
@@ -290,6 +294,8 @@ class MySensorsAdapter(Adapter):
                     dev_port, loop=self.LOOP, event_callback=self.mysensors_message, 
                     persistence=True, persistence_file=self.persistence_file_path, 
                     protocol_version='2.2')
+                if self.DEBUG:
+                    print("created serial PyMySensors object")
                 
             elif selected_gateway_type == 'Ethernet gateway':
                 self.GATEWAY = mysensors.AsyncTCPGateway(ip_address, event_callback=self.mysensors_message, 
@@ -331,6 +337,8 @@ class MySensorsAdapter(Adapter):
                 self.LOOP.run_until_complete(self.GATEWAY.start())    
                 
                 self.LOOP.run_forever()
+                if self.DEBUG:
+                    print("Beyond PyMySensors loop start")
             except:
                 print("Asyncio loop is not running")
             
@@ -452,6 +460,7 @@ class MySensorsAdapter(Adapter):
                             except Exception as ex:
                                 print("-Failed to add new device from internal presentation: " + str(ex))
                     else:
+                        # If it already exists, set it to connected if it hasn't been already.
                         try:
                             if targetDevice.connected == False:
                                 targetDevice.connected = True
@@ -468,7 +477,7 @@ class MySensorsAdapter(Adapter):
                     # Get the value from the message
                     new_value = None
                     try:
-                        if is_a_number(message.payload):
+                        if is_a_number(message.payload) and message.sub_type != 47:
                             new_value = get_int_or_float(message.payload)
                         else:
                             new_value = str(message.payload)
@@ -537,25 +546,30 @@ class MySensorsAdapter(Adapter):
                                         print("-The PyMySensors node existed, and has child data. Now to present it to the WebThings Gateway. Child = " + str(child))
                                         
                                     if not child.description:
-                                        print("-Child had no description")
+                                        if self.DEBUG:
+                                            print("-Child had no description")
                                         new_description = 'Property type ' + str(message.sub_type)
                                     else:
                                         new_description = child.description
-                                        print("new new description: " + str(new_description))
+                                        if self.DEBUG:
+                                            print("new new description: " + str(new_description))
                                         
                                     if not child.values:
                                         values = {}
                                     else:
                                         values = child.values
-                                        print("new new values: " + str(values))
+                                        if self.DEBUG:
+                                            print("new new values: " + str(values))
                                         
                                     if not child.type:
-                                        print("somehow there was no type data?")
+                                        if self.DEBUG:
+                                            print("somehow there was no type data?")
                                         return
                                     
                                     # def add_child(self, new_description, node_id, child_id, main_type, sub_type, values, value):
                                     targetDevice.add_child(new_description, message.node_id, message.child_id, child.type, message.sub_type, values, message.payload)
-                                    print("-Finished proces of adding new property on new device. Presenting device to the WebThings Gateway now.")
+                                    if self.DEBUG:
+                                        print("-Finished proces of adding new property on new device. Presenting device to the WebThings Gateway now.")
                                     self.handle_device_added(targetDevice)
                                     
                                     # Once the property has been created, we create a handle for it.
@@ -567,7 +581,7 @@ class MySensorsAdapter(Adapter):
                                         print("-Error adding property: " + str(ex))
                                     del self.GATEWAY.sensors[message.node_id].children[message.child_id] # Maybe delete the entire node? Start fresh?
                                     if self.DEBUG:
-                                        print("-Removed faulty node child from persistence data")
+                                        print("--Removed faulty node child from persistence data")
                                         
                                         
                                 
@@ -592,7 +606,7 @@ class MySensorsAdapter(Adapter):
 
 
         except Exception as ex:
-            print("-Failed to handle message:" + str(ex))
+            print("-Failed to handle incoming message:" + str(ex))
 
 
 
@@ -779,7 +793,7 @@ class MySensorsAdapter(Adapter):
         try:
             self.send_in_the_clones()
         except Exception as ex:
-            print("Error while optimizing: " + str(ex))
+            print("Error while creating clones: " + str(ex))
 
             
         try:
@@ -843,6 +857,8 @@ class MySensorsAdapter(Adapter):
                         print("Warning, no actual USB device found at specified serial port")
                 
                 self.start_pymysensors_gateway(selected_gateway_type, dev_port, '')
+                if self.DEBUG:
+                    print("Beyond start_pymysensors_gateway")
                 
             elif selected_gateway_type == 'Ethernet gateway':
                 

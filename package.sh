@@ -18,9 +18,12 @@ mkdir lib
 # Pull down Python dependencies
 pip3 install -r requirements.txt -t lib --no-binary pymysensors,paho-mqtt --prefix ""
 
+#temporary fix
+#cp VERSION ./lib/mysensors/
+
 cp -r pkg lib LICENSE package.json manifest.json *.py setup.cfg requirements.txt package/
 find package -type f -name '*.pyc' -delete
-find package -type d -empty -delete
+#find package -type d -empty -delete
 
 # Generate checksums
 cd package

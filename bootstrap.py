@@ -25,8 +25,8 @@ def install_packages():
         pass
 
     cmd = (
-        '{} -m pip install {} --install-option="--prefix=" -t lib '
-        '-r requirements.txt --no-binary pymysensors,paho-mqtt, pyserial'.format(sys.executable, system_option))
+        '{} -m pip install {} --install-option="--prefix=" --no-cache-dir --upgrade --force-reinstall -t lib '
+        '-r requirements.txt --no-binary pymysensors,paho-mqtt,pyserial'.format(sys.executable, system_option))
 
     try:
         subprocess.check_call(cmd,
@@ -45,9 +45,10 @@ try:
     import mysensors  # noqa: F401
     import paho  # noqa: F401
     import serial  # noqa: F401
-except ImportError:
+except ImportError as ex:
     # If installation failed, exit with 100 to tell the gateway not to restart
     # this process.
+    print("!ERROR!" + str(ex))
     if not install_packages():
         sys.exit(100)
 

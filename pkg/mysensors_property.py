@@ -122,7 +122,7 @@ class MySensorsProperty(Property):
         """
         
         if self.device.adapter.DEBUG:
-            print("property -> update")
+            print("property -> update: " +str(value))
         
         try:
             
