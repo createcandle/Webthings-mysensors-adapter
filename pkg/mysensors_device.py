@@ -824,10 +824,12 @@ class MySensorsDevice(Device):
 
             elif new_main_type == 23:                      # CUSTOM
                 if new_sub_type == 48: # V_CUSTOM
+                    self._type.append('MultiLevelSensor')
                     self.properties[targetPropertyID] = MySensorsProperty(
                         self,
                         targetPropertyID,
                         {
+                            '@type': 'LevelProperty',
                             'label': new_description,
                             'type': 'number',
                             'readOnly': True,

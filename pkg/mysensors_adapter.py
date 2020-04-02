@@ -106,87 +106,101 @@ class MySensorsAdapter(Adapter):
         except Exception as ex:
             print("Error loading config (and initialising PyMySensors library?): " + str(ex))
 
+        print("End of MySensors adapter init process")
 
 
     def clock(self):
         """ Runs every minute and updates which devices are still connected """
         if self.DEBUG:
             print("clock thread init")
+            
+        seconds_counter = 50;
+        minutes_counter = 0;
         while self.running:
 
-            try:
-                current_time = int(time.time())
-                #if self.DEBUG:
-                #    print("CLOCK TICK " + str(current_time) )
-                for nodeIndex in self.last_seen_timestamps:
+            if seconds_counter > 60:
+                seconds_counter = 0
+                minutes_counter += 1
+                
+                try:
+                    current_time = int(time.time())
                     if self.DEBUG:
-                        print("- Clock: nodeIndex in last_seen_timestamps: " + str(nodeIndex))
+                        print("CLOCK TICK " + str(current_time) )
+                    for nodeIndex in self.last_seen_timestamps:
+                        if self.DEBUG:
+                            print("- Clock: nodeIndex in last_seen_timestamps: " + str(nodeIndex))
                     
-                    pymy_heartbeat = 0
-                    if nodeIndex in self.GATEWAY.sensors:
-                        #if self.DEBUG:
-                        #    print("nodeIndex was in self.GATEWAY.sensors")
-                        try:
-                            # Some devices don't regularly send data, such as the smart lock, but they do send a 'heartbeat' signal to let us know they are still up and running.
-                            # Here we check if the heartbeat counter has changed since the previous clock tick. If it has, it gets a fresh timestamp.
-                            if hasattr(self.GATEWAY.sensors[nodeIndex], 'heartbeat'):
-                                #if self.DEBUG:
-                                #    print("This device has sent heartbeat signals")
-                                if int(self.GATEWAY.sensors[nodeIndex].heartbeat) != int(self.previous_heartbeats[nodeIndex]):
-                                    self.previous_heartbeats[nodeIndex] = int(self.GATEWAY.sensors[nodeIndex].heartbeat)
-                                    self.last_seen_timestamps[nodeIndex] = int(time.time())
+                        pymy_heartbeat = 0
+                        if nodeIndex in self.GATEWAY.sensors:
+                            #if self.DEBUG:
+                            #    print("nodeIndex was in self.GATEWAY.sensors")
+                            try:
+                                # Some devices don't regularly send data, such as the smart lock, but they do send a 'heartbeat' signal to let us know they are still up and running.
+                                # Here we check if the heartbeat counter has changed since the previous clock tick. If it has, it gets a fresh timestamp.
+                                if hasattr(self.GATEWAY.sensors[nodeIndex], 'heartbeat'):
+                                    #if self.DEBUG:
+                                    #    print("This device has sent heartbeat signals")
+                                    if int(self.GATEWAY.sensors[nodeIndex].heartbeat) != int(self.previous_heartbeats[nodeIndex]):
+                                        self.previous_heartbeats[nodeIndex] = int(self.GATEWAY.sensors[nodeIndex].heartbeat)
+                                        self.last_seen_timestamps[nodeIndex] = int(time.time())
+                                        if self.DEBUG:
+                                            print("updated timeout timestamp using heartbeat data")
+                                else:
                                     if self.DEBUG:
-                                        print("updated timeout timestamp using heartbeat data")
-                            else:
-                                if self.DEBUG:
-                                    print("This device does not seem to send a heartbeat (yet).")
+                                        print("This device does not seem to send a heartbeat (yet).")
                         
-                        except Exception as ex:
-                            print("Error trying to get heartbeat for timeout (device doesn't send heartbeats?): " + str(ex))
+                            except Exception as ex:
+                                print("Error trying to get heartbeat for timeout (device doesn't send heartbeats?): " + str(ex))
                     
-                    # Has the devices recently given some sign that it's alive? If not, set it to disconnected.
-                    # This is only done for devices that have recently crossed the timeout threshold.
-                    # A small window in which we tell the Gateway to set it to disconnected. This way we don't update the gateway's connection status too often.
-                    if self.DEBUG:
-                        print(str(nodeIndex) + " was last seen " + str( current_time - int(self.last_seen_timestamps[nodeIndex]) ) +  " seconds ago. Timeout threshold: " + str(self.timeout_seconds))
+                        # Has the devices recently given some sign that it's alive? If not, set it to disconnected.
+                        # This is only done for devices that have recently crossed the timeout threshold.
+                        # A small window in which we tell the Gateway to set it to disconnected. This way we don't update the gateway's connection status too often.
+                        if self.DEBUG:
+                            print(str(nodeIndex) + " was last seen " + str( current_time - int(self.last_seen_timestamps[nodeIndex]) ) +  " seconds ago. Timeout threshold: " + str(self.timeout_seconds))
                     
-                    if int(self.last_seen_timestamps[nodeIndex]) < (current_time - self.timeout_seconds): # and int(self.last_seen_timestamps[nodeIndex]) > ((current_time - self.timeout_seconds) - 120): 
-                        # This device hasn't been seen in a while.
+                        if int(self.last_seen_timestamps[nodeIndex]) < (current_time - self.timeout_seconds): # and int(self.last_seen_timestamps[nodeIndex]) > ((current_time - self.timeout_seconds) - 120): 
+                            # This device hasn't been seen in a while.
 
-                        try:
-                            targetDevice = self.get_device("MySensors-" + str(nodeIndex))
-                            if str(targetDevice) != 'None':
-                                if targetDevice.connected == True:
-                                    targetDevice.connected = False
-                                    targetDevice.connected_notify(False)
-                                if self.DEBUG:
-                                    print("-Setting device status to not connected.")
-                            else:
-                                print("-Strange, couldn't actually find the device to set it to disconnected")
-                        except Exception as ex:
-                                print("-Error updating state to disconnected: " + str(ex))
-                    #else:
-                        #if self.DEBUG:
-                        #    print(str(nodeIndex) + " has been spotted recently enough")
+                            try:
+                                targetDevice = self.get_device("MySensors-" + str(nodeIndex))
+                                if str(targetDevice) != 'None':
+                                    if targetDevice.connected == True:
+                                        targetDevice.connected = False
+                                        targetDevice.connected_notify(False)
+                                    if self.DEBUG:
+                                        print("-Setting device status to not connected.")
+                                else:
+                                    print("-Strange, couldn't actually find the device to set it to disconnected")
+                            except Exception as ex:
+                                    print("-Error updating state to disconnected: " + str(ex))
+                        #else:
+                            #if self.DEBUG:
+                            #    print(str(nodeIndex) + " has been spotted recently enough")
                         
-                        #try:
-                        #    targetDevice = self.get_device("MySensors-" + str(nodeIndex))
-                        #    if str(targetDevice) != 'None':
-                        #        if targetDevice.connected == False:
-                        #            targetDevice.connected = True
-                        #            targetDevice.connected_notify(True)
-                        #        if self.DEBUG:
-                        #            print("-Setting device status to (re-)connected.")
-                        #    else:
-                        #        print("-Strange, couldn't actually find the device to set it to (re-)connected")
-                        #except Exception as ex:
-                        #        print("-Error updating state to connected: " + str(ex))
+                            #try:
+                            #    targetDevice = self.get_device("MySensors-" + str(nodeIndex))
+                            #    if str(targetDevice) != 'None':
+                            #        if targetDevice.connected == False:
+                            #            targetDevice.connected = True
+                            #            targetDevice.connected_notify(True)
+                            #        if self.DEBUG:
+                            #            print("-Setting device status to (re-)connected.")
+                            #    else:
+                            #        print("-Strange, couldn't actually find the device to set it to (re-)connected")
+                            #except Exception as ex:
+                            #        print("-Error updating state to connected: " + str(ex))
                             
                             
-            except Exception as ex:
-                print("Clock error: " + str(ex))
+                except Exception as ex:
+                    print("Clock error: " + str(ex))
+                    
+                    
+                if minutes_counter > 60: # every hour, send out a discovery request to all nodes in the network
+                    minutes_counter = 0
+                    self.try_rerequest()
 
-            time.sleep(60)
+            time.sleep(1)
+            seconds_counter += 1
             
         if self.DEBUG:
             print("Clock thread ending")
@@ -203,8 +217,8 @@ class MySensorsAdapter(Adapter):
             with open(self.persistence_file_path) as f:
                 self.last_known_data = json.load(f)
                 #print(str(self.last_known_data))
-        except:
-            print("Could not open persistence JSON file (if you just installed the add-on then this is normal)")
+        except Exception as ex:
+            print("Could not open persistence JSON file (if you just installed the add-on then this is normal): " + str(ex))
             return
         
         try:
@@ -491,6 +505,7 @@ class MySensorsAdapter(Adapter):
                 print("self.GATEWAY.metric is now set to: " + str(self.GATEWAY.metric))
             except:
                 print("Failed to set the PyMySensors object to metric/fahrenheit.")
+            
             try:
                 self.try_rerequest() # Asks all nodes to present themselves
             except Exception as ex:
@@ -716,7 +731,7 @@ class MySensorsAdapter(Adapter):
         try:
             if self.t:
                 if self.DEBUG:
-                    print("Thread already existed")
+                    print("Rerequest thread already existed")
                 if not self.t.is_alive():
                     # Restarting request for presentation of nodes
                     self.t = threading.Thread(target=self.rerequest)
@@ -742,26 +757,29 @@ class MySensorsAdapter(Adapter):
         if self.DEBUG:
             print("Re-requesting presentation of all nodes on the network")
         
-        while self.running:
+        #while self.running:
             
-            try:
+        try:
+            if self.DEBUG:
                 print("Sending discovery request")
-                self.GATEWAY.send('0;255;3;0;26;0\n') # Ask all nodes within earshot to respond with their node ID's.
+            self.GATEWAY.send('0;255;3;0;26;0\n') # Ask all nodes within earshot to respond with their node ID's.
+            sleep(3)
+            # this asks all known devices to re-present themselves. In a future version this request could only be made to nodes where a device property count is lower than expected.
+            if self.DEBUG:
+                print("Starting looping over all known nodes in self.GATEWAY.sensors")
+            for index in self.GATEWAY.sensors: #, sensor
+                if self.DEBUG:
+                    print("<< Requesting presentation from " + str(index))
+                discover_encoded_message = str(index) + ';255;3;0;19;\n'
+                self.GATEWAY.send(discover_encoded_message)
+                sleep(1)
+        except Exception as ex:
+            print("error while re-requesting presentation of all devices: " + str(ex))
                 
-                # this asks all known devices to re-present themselves. In a future version this request could only be made to nodes where a device property count is lower than expected.
-                for index in self.GATEWAY.sensors: #, sensor
-                    if index != 0:
-                        if self.DEBUG:
-                            print("<< Requesting presentation from " + str(index))
-                        discover_encoded_message = str(index) + ';255;3;0;19;\n'
-                        self.GATEWAY.send(discover_encoded_message)
-                        #time.sleep(1)
-                        sleep(1)
-            except:
-                print("error while manually re-requesting presentations")
-                
-            sleep(10800) # Every three hours ask all devices to call back in.
-            print("Just woke up after 3 hour nap, ")
+        if self.DEBUG:
+            print("Finished re-requesting nodes to present themselves")
+            #sleep(10800) # Every three hours ask all devices to call back in.
+            #print("Just woke up after 3 hour nap, ")
 
 
 
@@ -966,7 +984,7 @@ class MySensorsAdapter(Adapter):
                 self.start_pymysensors_gateway(selected_gateway_type, '', ip_address)
 
             if self.DEBUG:
-                print("Bye")
+                print("End of handling configuration section")
         except Exception as ex:
             print("Error extracting settings from config object: " + str(ex))
         return
