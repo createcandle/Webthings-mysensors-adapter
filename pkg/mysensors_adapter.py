@@ -772,7 +772,7 @@ class MySensorsAdapter(Adapter):
                     print("<< Requesting presentation from " + str(index))
                 discover_encoded_message = str(index) + ';255;3;0;19;\n'
                 self.GATEWAY.send(discover_encoded_message)
-                sleep(1)
+                sleep(1.11)
         except Exception as ex:
             print("error while re-requesting presentation of all devices: " + str(ex))
                 

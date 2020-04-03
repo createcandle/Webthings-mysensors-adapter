@@ -144,6 +144,6 @@ class MySensorsProperty(Property):
             print("error translating value from boolean to thermostat string")
         
         
-        if value != self.value:
-            self.set_cached_value(value)
-            self.device.notify_property_changed(self)
+        #if value != self.value:
+        self.set_cached_value(value)
+        self.device.notify_property_changed(self)
