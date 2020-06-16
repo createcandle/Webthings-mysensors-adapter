@@ -138,8 +138,15 @@ class MySensorsAdapter(Adapter):
                                 # Some devices don't regularly send data, such as the smart lock, but they do send a 'heartbeat' signal to let us know they are still up and running.
                                 # Here we check if the heartbeat counter has changed since the previous clock tick. If it has, it gets a fresh timestamp.
                                 if hasattr(self.GATEWAY.sensors[nodeIndex], 'heartbeat'):
-                                    #if self.DEBUG:
-                                    #    print("This device has sent heartbeat signals")
+                                    if self.DEBUG:
+                                        print("This device has sent heartbeat signals")
+                                        
+                                    # if this is a new device that doesn't have any previous_heartBeat data, add it to the list.
+                                    if nodeIndex not in self.last_seen_timestamps:
+                                        self.last_seen_timestamps.update( {int(nodeIndex):0} )
+                                    if nodeIndex not in self.previous_heartbeats:
+                                        self.previous_heartbeats.update( {int(nodeIndex):0} )
+                                        
                                     if int(self.GATEWAY.sensors[nodeIndex].heartbeat) != int(self.previous_heartbeats[nodeIndex]):
                                         self.previous_heartbeats[nodeIndex] = int(self.GATEWAY.sensors[nodeIndex].heartbeat)
                                         self.last_seen_timestamps[nodeIndex] = int(time.time())
@@ -150,7 +157,8 @@ class MySensorsAdapter(Adapter):
                                         print("This device does not seem to send a heartbeat (yet).")
                         
                             except Exception as ex:
-                                print("Error trying to get heartbeat for timeout (device doesn't send heartbeats?): " + str(ex))
+                                if self.DEBUG:
+                                    print("Error trying to get heartbeat for timeout (device doesn't send heartbeats?): " + str(ex))
                     
                         # Has the devices recently given some sign that it's alive? If not, set it to disconnected.
                         # This is only done for devices that have recently crossed the timeout threshold.
@@ -158,38 +166,41 @@ class MySensorsAdapter(Adapter):
                         if self.DEBUG:
                             print(str(nodeIndex) + " was last seen " + str( current_time - int(self.last_seen_timestamps[nodeIndex]) ) +  " seconds ago. Timeout threshold: " + str(self.timeout_seconds))
                     
-                        if int(self.last_seen_timestamps[nodeIndex]) < (current_time - self.timeout_seconds): # and int(self.last_seen_timestamps[nodeIndex]) > ((current_time - self.timeout_seconds) - 120): 
-                            # This device hasn't been seen in a while.
+                        try:
+                            if int(self.last_seen_timestamps[nodeIndex]) < (current_time - self.timeout_seconds): # and int(self.last_seen_timestamps[nodeIndex]) > ((current_time - self.timeout_seconds) - 120): 
+                                # This device hasn't been seen in a while.
 
-                            try:
-                                targetDevice = self.get_device("MySensors-" + str(nodeIndex))
-                                if str(targetDevice) != 'None':
-                                    if targetDevice.connected == True:
-                                        targetDevice.connected = False
-                                        targetDevice.connected_notify(False)
-                                    if self.DEBUG:
-                                        print("-Setting device status to not connected.")
-                                else:
-                                    print("-Strange, couldn't actually find the device to set it to disconnected")
-                            except Exception as ex:
-                                    print("-Error updating state to disconnected: " + str(ex))
-                        #else:
-                            #if self.DEBUG:
-                            #    print(str(nodeIndex) + " has been spotted recently enough")
+                                try:
+                                    targetDevice = self.get_device("MySensors-" + str(nodeIndex))
+                                    if str(targetDevice) != 'None':
+                                        if targetDevice.connected == True:
+                                            targetDevice.connected = False
+                                            targetDevice.connected_notify(False)
+                                        if self.DEBUG:
+                                            print("-Setting device status to not connected.")
+                                    else:
+                                        if self.DEBUG:
+                                            print("-Strange, couldn't actually find the device to set it to disconnected")
+                                except Exception as ex:
+                                        print("-Error updating state to disconnected: " + str(ex))
+                            #else:
+                                #if self.DEBUG:
+                                #    print(str(nodeIndex) + " has been spotted recently enough")
                         
-                            #try:
-                            #    targetDevice = self.get_device("MySensors-" + str(nodeIndex))
-                            #    if str(targetDevice) != 'None':
-                            #        if targetDevice.connected == False:
-                            #            targetDevice.connected = True
-                            #            targetDevice.connected_notify(True)
-                            #        if self.DEBUG:
-                            #            print("-Setting device status to (re-)connected.")
-                            #    else:
-                            #        print("-Strange, couldn't actually find the device to set it to (re-)connected")
-                            #except Exception as ex:
-                            #        print("-Error updating state to connected: " + str(ex))
-                            
+                                #try:
+                                #    targetDevice = self.get_device("MySensors-" + str(nodeIndex))
+                                #    if str(targetDevice) != 'None':
+                                #        if targetDevice.connected == False:
+                                #            targetDevice.connected = True
+                                #            targetDevice.connected_notify(True)
+                                #        if self.DEBUG:
+                                #            print("-Setting device status to (re-)connected.")
+                                #    else:
+                                #        print("-Strange, couldn't actually find the device to set it to (re-)connected")
+                                #except Exception as ex:
+                                #        print("-Error updating state to connected: " + str(ex))
+                        except Exception as ex:
+                            print("-Error updating state from last_seen_timestamps: " + str(ex))
                             
                 except Exception as ex:
                     print("Clock error: " + str(ex))
@@ -203,7 +214,7 @@ class MySensorsAdapter(Adapter):
             seconds_counter += 1
             
         if self.DEBUG:
-            print("Clock thread ending")
+            print("While-loop in clock thread has been exited")
 
 
 
@@ -694,9 +705,6 @@ class MySensorsAdapter(Adapter):
                     print("Error while updating extra device")            
 
 
-                
-
-
         except Exception as ex:
             print("-Failed to handle incoming message:" + str(ex))
 
@@ -710,10 +718,13 @@ class MySensorsAdapter(Adapter):
         
         try:    
             ports = prtlst.comports()
+            if self.DEBUG:
+                print("All serial ports: " + str(ports))
             for port in ports:
-                if self.DEBUG:
-                    print("possible port: " + str(port))
                 if 'USB' in port[1]: #check 'USB' string in device description
+
+                    if self.DEBUG:
+                        print("adding possible port with 'USB' in name to list: " + str(port))
                     #if self.DEBUG:
                     #    print("port: " + str(port[0]))
                     #    print("usb device description: " + str(port[1]))
@@ -1064,7 +1075,7 @@ class MySensorsAdapter(Adapter):
             try:
                 for device_name in self.get_devices():
                     if self.DEBUG:
-                        print("__device_name = " + str(device_name))
+                        print("cloning > device_name = " + str(device_name))
                     #onOff_count = 0
                     
                     try:
@@ -1080,47 +1091,15 @@ class MySensorsAdapter(Adapter):
                                 
                                 if int(property_object.child_id) >= 200:
                                     
-                                #if property_object.description['@type'] == "OnOffProperty":
-                                #    onOff_count += 1
-                            #except:
-                                #print("no @type set")
-                            #    pass
-                            
-                        #print("onOff_count = " + str(onOff_count))
-                        
-                    #except Exception as ex:
-                    #    print("Error scanning for optimizable devices: " + str(ex))
-                    
-                    
-                    #if onOff_count > 1:
-                    #    onOff_count = 0
-                    #    for device_property in targetDevice.get_property_descriptions():
-                    #        property_object = targetDevice.find_property(device_property)
-                    #        try:
-                                #if property_object.description['@type'] == "OnOffProperty":
-                                #    onOff_count += 1
-                                #    
-                                #    if onOff_count > 1:
-                                        # Set the @type of the original device to None? That solves a lot of issues: it won't be copied again, and it makes the original device more predictable.. in a way. Only one toggle will be the main one.
-                                #        properties_to_remove_OnOff_from.append(property_object)
-                                        
                                     # Generate a predictable name
                                     extra_name = str(property_object.node_id) + "-" + str(property_object.child_id)
-                                    #print(" extra_name = " + str(extra_name))
                                     property_label = str(property_object.description['label'])
                                     
-                                    #try:
-                                    #    property_label = str(targetDevice.title) + " - " + property_label
-                                    #except:
-                                    #    print("upgrade to at least version 0.9 of the WebThings Gateway")
-                                        
                                     print("extra property title = " + str(property_label))
                                     # Check if the extra thing hasn't already been created
                                                                     # Add the node to the devices list
                                     device = MySensorsDevice(self, extra_name, property_label)
                                     try:
-                                        #print("))get ID " + str(device.get_id()))
-                                        #add_child(self, new_description, node_id, child_id, main_type, sub_type, values, value):
                                         device.add_child(property_label,property_object.node_id,property_object.child_id,property_object.main_type, property_object.subchild_id, property_object.values, property_object.value)
                                         new_devices_to_add.append(device)
                                         #print("CHILD ADDED!")
@@ -1154,24 +1133,12 @@ class MySensorsAdapter(Adapter):
                 for donor_property in properties_to_remove_OnOff_from:
                     #print("")
                     #print(str(vars(donor_property)))
-                    donor_property.description['@type'] = None # Will this already do that?
+                    donor_property.description['@type'] = None # Will this already remove the capability from the donor?
                     if self.DEBUG:
                         print("Removed capability from " + str(donor_property.title))
                     
             except:
                 print("Could not remove OnOff property from the clone's donor property")
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

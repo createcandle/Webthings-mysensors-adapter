@@ -107,7 +107,7 @@ class MySensorsProperty(Property):
                 self.device.adapter.GATEWAY.set_child_value(intNodeID, intChildID, intSubchildID, new_value) # here we send the data to the MySensors network.
                 #print("-updated values inside PyMySensors: " + str(self.device.adapter.GATEWAY.sensors[intNodeID].children[intChildID].values))
             except Exception as ex:
-                print("set value inside PyMySensors object failed. Error: " + str(ex))
+                print("property: set value inside PyMySensors object failed. Error: " + str(ex))
 
         except Exception as ex:
             print("set_value inside property object failed. Error: " + str(ex))
@@ -144,6 +144,6 @@ class MySensorsProperty(Property):
             print("error translating value from boolean to thermostat string")
         
         
-        #if value != self.value:
-        self.set_cached_value(value)
-        self.device.notify_property_changed(self)
+        if value != self.value:
+            self.set_cached_value(value)
+            self.device.notify_property_changed(self)

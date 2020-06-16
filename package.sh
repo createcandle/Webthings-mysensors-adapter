@@ -6,7 +6,7 @@ version=$(grep version package.json | cut -d: -f2 | cut -d\" -f2)
 
 
 # Clean up from previous releases
-rm -rf *.tgz package
+rm -rf *.tgz package lib
 rm -f SHA256SUMS
 rm -rf lib
 rm -rf ._*
