@@ -3,7 +3,7 @@
   "description": "MySensors add-on for Mozilla WebThings Gateway",
   "gateway_specific_settings": {
     "webthings": {
-      "exec": "python3 {path}/bootstrap.py",
+      "exec": "python3 {path}/main.py",
       "primary_type": "adapter",
       "strict_max_version": "*",
       "strict_min_version": "0.10.0"
@@ -84,7 +84,7 @@
         "Gateway",
         "Optimize things",
         "Metric",
-				"Timeout period",
+        "Timeout period",
         "Debugging"
       ],
       "type": "object"

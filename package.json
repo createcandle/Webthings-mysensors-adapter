@@ -23,15 +23,16 @@
   },
   "files": [
     "LICENSE",
+    "README.md",
     "SHA256SUMS",
+    "lib",
     "main.py",
+    "manifest.json",
     "pkg/__init__.py",
     "pkg/mysensors_adapter.py",
     "pkg/mysensors_device.py",
     "pkg/mysensors_property.py",
-    "pkg/util.py",
-    "requirements.txt",
-    "setup.cfg"
+    "pkg/util.py"
   ],
   "moziot": {
     "api": {
@@ -45,7 +46,7 @@
       "Metric": true,
       "Optimize things": true,
       "Show connection status": true,
-			"Timeout period": "",
+      "Timeout period": "",
       "USB device name": "",
       "IP address": "",
       "MQTT username": "",
@@ -59,7 +60,7 @@
       "required": [
         "Gateway",
         "Optimize things",
-				"Timeout period",
+        "Timeout period",
         "Show connection status",
         "Metric",
         "Debugging"
