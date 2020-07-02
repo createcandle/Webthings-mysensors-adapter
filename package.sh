@@ -2,10 +2,6 @@
 
 version=$(grep version package.json | cut -d: -f2 | cut -d\" -f2)
 
-
-# Clean up from previous releases
-rm -rf *.tgz package SHA256SUMS lib
-
 if [ -z "${ADDON_ARCH}" ]; then
   TARFILE_SUFFIX=
 else
@@ -13,7 +9,8 @@ else
   TARFILE_SUFFIX="-${ADDON_ARCH}-v${PYTHON_VERSION}"
 fi
 
-
+# Clean up from previous releases
+rm -rf *.tgz package SHA256SUMS lib
 
 # Prep new package
 mkdir lib package
@@ -27,16 +24,14 @@ find package -type f -name '*.pyc' -delete
 find package -type d -empty -delete
 
 # Generate checksums
-echo "generating checksums"
 cd package
 find . -type f \! -name SHA256SUMS -exec shasum --algorithm 256 {} \; >> SHA256SUMS
 cd -
 
 # Make the tarball
-echo "creating archive"
 TARFILE="mysensors-adapter-${version}${TARFILE_SUFFIX}.tgz"
 tar czf ${TARFILE} package
 
 shasum --algorithm 256 ${TARFILE} > ${TARFILE}.sha256sum
-sha256sum ${TARFILE}
-#rm -rf SHA256SUMS package
+
+rm -rf SHA256SUMS package
