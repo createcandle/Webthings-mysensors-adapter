@@ -1,6 +1,9 @@
 #!/bin/bash -e
 
-version=$(grep version package.json | cut -d: -f2 | cut -d\" -f2)
+# Setup environment for building inside Dockerized toolchain
+[ $(id -u) = 0 ] && umask 0
+
+version=$(grep '"version"' manifest.json | cut -d: -f2 | cut -d\" -f2)
 
 if [ -z "${ADDON_ARCH}" ]; then
   TARFILE_SUFFIX=
