@@ -415,7 +415,7 @@ class MySensorsAdapter(Adapter):
                         self.MQTTC.authenticate(username=self.MQTT_username,password=self.MQTT_password)
                         print("-set MQTT username and password")
                     #print("MQTT will start")
-                    self.MQTTC.loop_start()
+                    self.MQTTC.start()
                 except Exception as ex:
                     print("MQTT object error: " + str(ex))
                     
@@ -425,7 +425,7 @@ class MySensorsAdapter(Adapter):
                 #    protocol_version='2.2')
                 
                 try:
-                    self.GATEWAY = mysensors.AsyncMQTTGateway(self.MQTTC.publish, self.MQTTC.subscribe, in_prefix=self.MQTT_in_Prefix,
+                    self.GATEWAY = mysensors.AsyncMQTTGateway(self.MQTTC.publish, self.MQTTC.subscribe, in_prefix=self.MQTT_in_prefix,
                         out_prefix=self.MQTT_out_prefix, retain=True, event_callback=self.mysensors_message,
                         persistence=True, persistence_file=self.persistence_file_path, 
                         protocol_version='2.2')
