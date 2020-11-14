@@ -2,9 +2,12 @@
 
 version=$(grep '"version"' manifest.json | cut -d: -f2 | cut -d\" -f2)
 
+# Setup environment for building inside Dockerized toolchain
+[ $(id -u) = 0 ] && umask 0
 
 # Clean up from previous releases
 rm -rf *.tgz package SHA256SUMS lib
+
 
 if [ -z "${ADDON_ARCH}" ]; then
   TARFILE_SUFFIX=
