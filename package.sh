@@ -8,7 +8,6 @@ version=$(grep '"version"' manifest.json | cut -d: -f2 | cut -d\" -f2)
 # Clean up from previous releases
 rm -rf *.tgz package SHA256SUMS lib
 
-
 if [ -z "${ADDON_ARCH}" ]; then
   TARFILE_SUFFIX=
 else
@@ -29,6 +28,7 @@ cp -r lib pkg LICENSE manifest.json *.py README.md package/
 find package -type f -name '*.pyc' -delete
 find package -type f -name '._*' -delete
 find package -type d -empty -delete
+rm -rf package/pkg/pycache
 
 # Generate checksums
 echo "generating checksums"
