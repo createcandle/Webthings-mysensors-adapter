@@ -1,4 +1,4 @@
-"""MySensors adapter for Mozilla WebThings Gateway."""
+"""MySensors adapter for WebThings Gateway."""
 
 import os
 from os import path
@@ -30,7 +30,7 @@ __location__ = os.path.realpath(
     os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
 _CONFIG_PATHS = [
-    os.path.join(os.path.expanduser('~'), '.mozilla-iot', 'config'),
+    os.path.join(os.path.expanduser('~'), '.webthings', 'config'),
 ]
 
 if 'MOZIOT_HOME' in os.environ:
@@ -59,8 +59,8 @@ class MySensorsAdapter(Adapter):
                     path,
                     'mysensors-adapter-persistence.json'
                 )
-        self.addon_path = os.path.join(os.path.expanduser('~'), '.mozilla-iot', 'addons', 'mysensors-adapter')
-        self.persistence_file_path = os.path.join(os.path.expanduser('~'), '.mozilla-iot', 'data', 'mysensors-adapter','mysensors-adapter-persistence.json')
+        self.addon_path = os.path.join(os.path.expanduser('~'), '.webthings', 'addons', 'mysensors-adapter')
+        self.persistence_file_path = os.path.join(os.path.expanduser('~'), '.webthings', 'data', 'mysensors-adapter','mysensors-adapter-persistence.json')
         
         print("User profile data: " + str(self.user_profile))
         
@@ -415,6 +415,7 @@ class MySensorsAdapter(Adapter):
                         self.MQTTC.authenticate(username=self.MQTT_username,password=self.MQTT_password)
                         print("-set MQTT username and password")
                     #print("MQTT will start")
+                    #self.MQTTC.loop_start()
                     self.MQTTC.start()
                 except Exception as ex:
                     print("MQTT object error: " + str(ex))
