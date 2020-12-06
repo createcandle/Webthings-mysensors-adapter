@@ -1,4 +1,4 @@
-"""MySensors adapter for Mozilla WebThings Gateway."""
+"""MySensors adapter for WebThings Gateway."""
 
 import mysensors.mysensors as mysensors
 

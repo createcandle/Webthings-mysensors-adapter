@@ -3,7 +3,6 @@
 import os
 from os import path
 import sys
-
 sys.path.append(path.join(path.dirname(path.abspath(__file__)), 'lib'))
 
 import json
@@ -24,17 +23,15 @@ from gateway_addon import Adapter, Database
 from .mysensors_device import MySensorsDevice
 from .util import pretty, is_a_number, get_int_or_float
 
-_TIMEOUT = 3
 
-__location__ = os.path.realpath(
-    os.path.join(os.getcwd(), os.path.dirname(__file__)))
+_TIMEOUT = 3
 
 _CONFIG_PATHS = [
     os.path.join(os.path.expanduser('~'), '.webthings', 'config'),
 ]
 
-if 'MOZIOT_HOME' in os.environ:
-    _CONFIG_PATHS.insert(0, os.path.join(os.environ['MOZIOT_HOME'], 'config'))
+if 'WEBTHINGS_HOME' in os.environ:
+    _CONFIG_PATHS.insert(0, os.path.join(os.environ['WEBTHINGS_HOME'], 'config'))
 
 
 
@@ -50,6 +47,7 @@ class MySensorsAdapter(Adapter):
         print("initialising adapter from class")
         self.pairing = False
         self.name = self.__class__.__name__
+        self.addon_name = 'mysensors-adapter'
         Adapter.__init__(self, 'mysensors-adapter', 'mysensors-adapter', verbose=verbose)
         #print("Adapter ID = " + self.get_id())
 
@@ -59,17 +57,10 @@ class MySensorsAdapter(Adapter):
                     path,
                     'mysensors-adapter-persistence.json'
                 )
-        self.addon_path = os.path.join(self.user_profile['addonsDir'], 'mysensors-adapter')
-        self.persistence_file_path = os.path.join(self.user_profile['dataDir'], 'mysensors-adapter','mysensors-adapter-persistence.json')
+        self.addon_path = os.path.join(self.user_profile['addonsDir'], self.addon_name)
+        self.persistence_file_path = os.path.join(self.user_profile['dataDir'], self.addon_name,'mysensors-adapter-persistence.json')
         
         print("User profile data: " + str(self.user_profile))
-        
-        # Persistence files should move to a new location.
-        try:
-            if os.path.isfile(self.old_persistence_file_path) and ( not os.path.isfile(self.persistence_file_path)):
-                os.system('cp ' + self.old_persistence_file_path + ' ' + self.persistence_file_path)
-        except:
-            print("Error copying old persistence file to new location")
         
         self.metric = True
         self.temperature_unit = 'degree celsius'
