@@ -64,3 +64,6 @@ Version 1.0.0
 
 Version 1.0.3
 - Attempt to make MQTT work (something I don't use myself, so anyone willing to help is welcome to)
+
+Version 1.1.1
+- Made it compatible with WebThings 1.0 release
