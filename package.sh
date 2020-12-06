@@ -6,7 +6,7 @@ version=$(grep '"version"' manifest.json | cut -d: -f2 | cut -d\" -f2)
 [ $(id -u) = 0 ] && umask 0
 
 # Clean up from previous releases
-rm -rf *.tgz package SHA256SUMS lib
+rm -rf *.tgz *.sha256sum package SHA256SUMS lib
 
 if [ -z "${ADDON_ARCH}" ]; then
   TARFILE_SUFFIX=
