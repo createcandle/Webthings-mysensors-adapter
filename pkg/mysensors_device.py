@@ -1351,7 +1351,7 @@ class MySensorsDevice(Device):
                     
 
             else:
-                print("MYSENSORS - THIS V_TYPE IS NOT SUPPORTED YET (OR DOES NOT EXIST)")
+                print("MYSENSORS - targetPropertyID was NOT in self.properties (yet): " + str(targetPropertyID))
                 
         except Exception as ex:
             print("Notify after adding property ERROR: " + str(ex))
