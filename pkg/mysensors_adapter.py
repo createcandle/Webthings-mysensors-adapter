@@ -59,8 +59,8 @@ class MySensorsAdapter(Adapter):
                     path,
                     'mysensors-adapter-persistence.json'
                 )
-        self.addon_path = os.path.join(os.path.expanduser('~'), '.webthings', 'addons', 'mysensors-adapter')
-        self.persistence_file_path = os.path.join(os.path.expanduser('~'), '.webthings', 'data', 'mysensors-adapter','mysensors-adapter-persistence.json')
+        self.addon_path = os.path.join(self.user_profile['addonsDir'], 'mysensors-adapter')
+        self.persistence_file_path = os.path.join(self.user_profile['dataDir'], 'mysensors-adapter','mysensors-adapter-persistence.json')
         
         print("User profile data: " + str(self.user_profile))
         
