@@ -21,6 +21,7 @@
       "Optimize things": true,
       "Timeout period": "60",
       "USB device name": "",
+	  "USB serial communication speed":"115200",
       "IP address": "",
       "MQTT password": "",
       "MQTT username": "",
@@ -55,6 +56,17 @@
           "description": "If you leave this empty, the add-on will automatically search for a connceted MySensors gateway device. If you want you can manually override this proces by providing a serial port name here. On a Linux device this would be something like '/dev/ttyUSB0'.",
           "type": "string"
         },
+        "USB serial communication speed": {
+          "description": "The speed (baud rate) with which to communicate over USB with the receiver. Default for Candle is 115200.",
+          "enum": [
+            "9600",
+			"19200", 
+			"38400", 
+			"57600", 
+			"115200"
+          ],
+          "type": "string"
+        },
         "IP address": {
           "description": "If you are using an ethernet gateway or MQTT server, what is its IP address? You can try 127.0.0.1 if it's installed on the same computer as the Mozilla WebThings gateway.",
           "type": "string"
@@ -84,6 +96,7 @@
         "Gateway",
         "Optimize things",
         "Metric",
+		"USB serial communication speed",
         "Timeout period",
         "Debugging"
       ],
@@ -91,5 +104,5 @@
     }
   },
   "short_name": "MySensors",
-  "version": "1.1.4"
+  "version": "1.2.0"
 }
