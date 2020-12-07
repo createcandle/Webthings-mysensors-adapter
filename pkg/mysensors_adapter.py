@@ -64,6 +64,7 @@ class MySensorsAdapter(Adapter):
         
         self.metric = True
         self.temperature_unit = 'degree celsius'
+        self.usb_serial_communication_speed = 115200
         self.DEBUG = True
         self.show_connection_status = True
         self.first_request_done = False
@@ -302,7 +303,7 @@ class MySensorsAdapter(Adapter):
 
     def start_pymysensors_gateway(self, selected_gateway_type, dev_port='/dev/ttyUSB0', ip_address='127.0.0.1'):
         # This is the non-ASynchronous version, which is no longer used:
-        #self.GATEWAY = mysensors.SerialGateway('/dev/ttyUSB0', baud=115200, timeout=1.0, reconnect_timeout=10.0, event_callback=self.event, persistence=False, persistence_file='./mysensors.pickle', protocol_version='2.2')
+        #self.GATEWAY = mysensors.SerialGateway('/dev/ttyUSB0', baud=self.usb_serial_communication_speed, timeout=1.0, reconnect_timeout=10.0, event_callback=self.event, persistence=False, persistence_file='./mysensors.pickle', protocol_version='2.2')
         #self.GATEWAY.start_persistence()
         #self.GATEWAY.start()
         
@@ -323,7 +324,7 @@ class MySensorsAdapter(Adapter):
             if selected_gateway_type == 'USB Serial gateway':
                 print("Starting non-async serial")
                 self.GATEWAY = mysensors.SerialGateway(
-                  dev_port, baud=115200, 
+                  dev_port, baud=self.usb_serial_communication_speed, 
                   #timeout=1.0, 
                   #reconnect_timeout=10.0,
                   event_callback=self.mysensors_message, persistence=True,
@@ -331,7 +332,7 @@ class MySensorsAdapter(Adapter):
                 #GATEWAY.start_persistence() # optional, remove this line if you don't need persistence.
                 #GATEWAY.start()
                 
-                #self.GATEWAY = mysensors.SerialGateway(dev_port, baud=115200, timeout=1.0, reconnect_timeout=10.0, event_callback=self.mysensors_message, persistence=True, persistence_file=self.persistence_file_path, protocol_version='2.2')
+                #self.GATEWAY = mysensors.SerialGateway(dev_port, baud=self.usb_serial_communication_speed, timeout=1.0, reconnect_timeout=10.0, event_callback=self.mysensors_message, persistence=True, persistence_file=self.persistence_file_path, protocol_version='2.2')
                 self.GATEWAY.start_persistence()
                 self.GATEWAY.start()
                 print("Beyond starting non-async serial")
@@ -842,6 +843,16 @@ class MySensorsAdapter(Adapter):
             print("Timeout period preference error:" + str(ex))
             
         
+        # USB serial communication speed
+        try:
+            if 'USB serial communication speed' in config:
+                self.usb_serial_communication_speed = int(config['USB Serial communication speed'])
+                print("-USB serial communication speed: " + str(self.usb_serial_communication_speed))
+                
+        except Exception as ex:
+            print("USB Serial communication speed error:" + str(ex))
+
+
         
         # Metric or Imperial
         try:
@@ -923,7 +934,7 @@ class MySensorsAdapter(Adapter):
                             for port_id in self.initial_serial_devices:
                                 if self.DEBUG:
                                     print("Scanning port: = " + str(port_id))
-                                current_serial_object = serial.Serial(str(port_id), 115200, timeout=1)
+                                current_serial_object = serial.Serial(str(port_id), self.usb_serial_communication_speed, timeout=1)
                                 timeout_counter = 300
                                 while( timeout_counter > 0):     # Wait at most 30 seconds for data from the serial port
                                     timeout_counter -= 1
