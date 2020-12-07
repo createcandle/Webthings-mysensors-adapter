@@ -1,26 +1,20 @@
 name: Release
 
 on:
-  push:
-    tags:
-    - '[0-9]+.[0-9]+.[0-9]+'
+  release:
+    types: [created]
 
 jobs:
-  create-release:
+  get-release:
     runs-on: ubuntu-latest
     steps:
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1.0.0
+    - name: Get Release
+      id: get_release
+      uses: bruceadams/get-release@v1.2.2
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ github.ref }}
-        release_name: Release ${{ github.ref }}
-        draft: false
-        prerelease: false
     - name: Dump upload url to file
-      run: echo '${{ steps.create_release.outputs.upload_url }}' > upload_url
+      run: echo '${{ steps.get_release.outputs.upload_url }}' > upload_url
     - name: Upload upload_url
       uses: actions/upload-artifact@v1
       with:
@@ -28,7 +22,7 @@ jobs:
         path: upload_url
 
   build:
-    needs: create-release
+    needs: get-release
     strategy:
       matrix:
         platform: [
