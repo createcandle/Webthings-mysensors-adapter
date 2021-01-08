@@ -881,41 +881,56 @@ class MySensorsDevice(Device):
                         values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
 
 
-            elif new_main_type == 26 or new_main_type == 27: # RGB light or RGB light with separate white level
-                #self._type.append(['OnOffSwitch', 'Light', 'ColorControl'])
-                #pass #todo
-                if new_sub_type == 2: # V_STATUS
-                    self._type.append('Light')
+            elif new_main_type == 26: # RGB light, using hex codes
+                if new_sub_type == 40:                     # V_RGB
+                    self._type.append('ColorControl')    
                     self.properties[targetPropertyID] = MySensorsProperty(
                         self,
                         targetPropertyID,
                         {
-                            '@type': 'OnOffProperty',
+                            '@type': 'ColorProperty',
                             'label': new_description,
-                            'type': 'boolean',
+                            'type': 'string',
+                            'readOnly': False,
                         },
                         values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
-                if new_sub_type == 3: # V_PERCENTAGE
-                    self._type.append('Light')
+                if new_sub_type == 17: # V_WATT (power meter)
                     self.properties[targetPropertyID] = MySensorsProperty(
                         self,
                         targetPropertyID,
                         {
-                            '@type': 'BrightnessProperty',
+                            '@type': 'InstantaneousPowerProperty',
                             'label': new_description,
-                            'minimum': 0,
-                            'maximum': 100,
-                            'type': 'integer',
-                            'unit': 'percent',
-                            'multipleOf':1,
-                            #'step': 1,
+                            'type': 'number',
+                            'unit': 'watt',
                         },
                         values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
+                        
 
-            #elif new_main_type == 27:                      # RGB light with separate white level
-            #    #self._type.append(['OnOffSwitch', 'Light', 'ColorControl'])
-            #    pass #todo
-
+            elif new_main_type == 27: # RGB light with separate white level, using hex code like #FF0000FF, where the last FF is the brightness.
+                if new_sub_type == 40:                     # V_RGB
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            '@type': 'ColorProperty',
+                            'label': new_description,
+                            'type': 'string',
+                            'readOnly': False,
+                        },
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
+                if new_sub_type == 17: # V_WATT (power meter)
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            '@type': 'InstantaneousPowerProperty',
+                            'label': new_description,
+                            'type': 'number',
+                            'unit': 'watt',
+                        },
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
+                        
 
             elif new_main_type == 28:                      # Color sensor
                 if new_sub_type == 40:                     # V_RGB
@@ -933,7 +948,6 @@ class MySensorsDevice(Device):
 
             elif new_main_type == 29:                      # Thermostat / HVAC
                 if new_sub_type == 2: # V_STATUS
-                    #self._type.append('OnOffSwitch')           
                     self.properties[targetPropertyID] = MySensorsProperty(
                         self,
                         targetPropertyID,
