@@ -894,6 +894,32 @@ class MySensorsDevice(Device):
                             'readOnly': False,
                         },
                         values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
+                if new_sub_type == 2: # V_STATUS
+                    #self._type.append('Light')
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            '@type': 'OnOffProperty',
+                            'label': new_description,
+                            'type': 'boolean',
+                        },
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
+                if new_sub_type == 3: # V_PERCENTAGE
+                    self._type.append('Light')
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            '@type': 'BrightnessProperty',
+                            'label': new_description,
+                            'minimum': 0,
+                            'maximum': 100,
+                            'step': 1,
+                            'type': 'integer',
+                            'unit': 'percent',
+                        },
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
                 if new_sub_type == 17: # V_WATT (power meter)
                     self.properties[targetPropertyID] = MySensorsProperty(
                         self,
@@ -919,7 +945,33 @@ class MySensorsDevice(Device):
                             'readOnly': False,
                         },
                         values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
-                if new_sub_type == 17: # V_WATT (power meter)
+                if new_sub_type == 2: # V_STATUS
+                    #self._type.append('Light')
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            '@type': 'OnOffProperty',
+                            'label': new_description,
+                            'type': 'boolean',
+                        },
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
+                if new_sub_type == 3: # V_PERCENTAGE
+                    self._type.append('Light')
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            '@type': 'BrightnessProperty',
+                            'label': new_description,
+                            'minimum': 0,
+                            'maximum': 100,
+                            'step': 1,
+                            'type': 'integer',
+                            'unit': 'percent',
+                        },
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
+                    if new_sub_type == 17: # V_WATT (power meter)
                     self.properties[targetPropertyID] = MySensorsProperty(
                         self,
                         targetPropertyID,

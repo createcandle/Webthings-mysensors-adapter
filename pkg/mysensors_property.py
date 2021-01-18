@@ -98,7 +98,10 @@ class MySensorsProperty(Property):
             else:
                 if self.device.adapter.DEBUG:
                     print("-will be sent as string")
-                new_value = str(value)
+                if self.description["@type"]=="ColorProperty":
+                    new_value = str(value).lstrip("#")
+                else:
+                    new_value = str(value)
             
             try:
                 #print("-target values inside PyMySensors A: " + str(self.device.adapter.GATEWAY.sensors[self.node_id].children[self.child_id].values))
@@ -143,6 +146,8 @@ class MySensorsProperty(Property):
         except:
             print("error translating value from boolean to thermostat string")
         
+        if self.description["@type"]=="ColorProperty":
+            value = "#" + value
         
         if value != self.value:
             self.set_cached_value(value)
