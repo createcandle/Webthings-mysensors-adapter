@@ -322,7 +322,7 @@ class MySensorsAdapter(Adapter):
         # Establishing a MySensors gateway:
         try:
             if selected_gateway_type == 'USB Serial gateway':
-                print("Starting non-async serial")
+                print("Starting serial")
                 self.GATEWAY = mysensors.SerialGateway(
                   dev_port, baud=self.usb_serial_communication_speed, 
                   #timeout=1.0, 
@@ -335,7 +335,7 @@ class MySensorsAdapter(Adapter):
                 #self.GATEWAY = mysensors.SerialGateway(dev_port, baud=self.usb_serial_communication_speed, timeout=1.0, reconnect_timeout=10.0, event_callback=self.mysensors_message, persistence=True, persistence_file=self.persistence_file_path, protocol_version='2.2')
                 self.GATEWAY.start_persistence()
                 self.GATEWAY.start()
-                print("Beyond starting non-async serial")
+                #print("Beyond starting non-async serial")
                 
                 """
                 try:
@@ -1061,8 +1061,9 @@ class MySensorsAdapter(Adapter):
 
 
     def handle_device_saved(self, device_id, device):
-        print("handle_device_saved ID = " + str(device_id))
-        print("handle_device_saved device = " + str(device))
+        if self.DEBUG:
+            print("handle_device_saved ID = " + str(device_id))
+            print("handle_device_saved device = " + str(device))
 
 
     def send_in_the_clones(self):
