@@ -662,28 +662,37 @@ class MySensorsAdapter(Adapter):
                                         print("somehow there was no type data?")
                                     return
                                 
-                                # def add_child(self, new_description, node_id, child_id, main_type, sub_type, values, value):
-                                targetDevice.add_child(new_description, message.node_id, message.child_id, child.type, message.sub_type, values, message.payload)
-                                if self.DEBUG:
-                                    print("-Finished proces of adding new property on new device. Presenting device to the WebThings Gateway now.")
-                                self.handle_device_added(targetDevice)
+                                try:
+                                    # def add_child(self, new_description, node_id, child_id, main_type, sub_type, values, value):
+                                    targetDevice.add_child(new_description, message.node_id, message.child_id, child.type, message.sub_type, values, message.payload)
+                                    if self.DEBUG:
+                                        print("-Finished proces of adding new property on new device. Presenting device to the WebThings Gateway now.")
+                                    self.handle_device_added(targetDevice)
                                 
-                                # Once the property has been created, we create a handle for it.
-                                targetProperty = targetDevice.find_property(targetPropertyID)
-                                #device.connected_notify(False)
+                                    # Once the property has been created, we create a handle for it.
+                                    targetProperty = targetDevice.find_property(targetPropertyID)
+                                    #device.connected_notify(False)
+                                except Exception as ex:
+                                    print("Error adding new property from incoming message")
                                 
                             except Exception as ex:
                                 if self.DEBUG:
                                     print("-Error adding property: " + str(ex))
-                                del self.GATEWAY.sensors[message.node_id].children[message.child_id] # Maybe delete the entire node? Start fresh?
-                                if self.DEBUG:
-                                    print("--Removed faulty node child from persistence data")
+                                try:
+                                    del self.GATEWAY.sensors[message.node_id].children[message.child_id] # Maybe delete the entire node? Start fresh?
+                                    if self.DEBUG:
+                                        print("--Removed faulty node child from persistence data")
+                                except Exception as ex:
+                                    print("deleting faulty device data failed: " + str(ex))
                                     
                                     
                             
                         # The property has already been created, so just update its value.    
-                        if targetProperty != None:
-                            targetProperty.update(new_value)
+                        try:
+                            if targetProperty != None:
+                                targetProperty.update(new_value)
+                        except Exception as ex:
+                            print("-Failed update value from incoming message:" + str(ex))
             
             # Try to also update the extra cloned device/property, if it exists.
             if self.optimize:
@@ -1137,9 +1146,11 @@ class MySensorsAdapter(Adapter):
                 for donor_property in properties_to_remove_OnOff_from:
                     #print("")
                     #print(str(vars(donor_property)))
-                    donor_property.description['@type'] = None # Will this already remove the capability from the donor?
-                    if self.DEBUG:
-                        print("Removed capability from " + str(donor_property.title))
+                    if 'description' in donor_property:
+                        if '@type' in donor_property.description:
+                            donor_property.description['@type'] = None # Will this already remove the capability from the donor?
+                            if self.DEBUG:
+                                print("Removed capability from " + str(donor_property.title))
                     
             except:
                 print("Could not remove OnOff property from the clone's donor property")
