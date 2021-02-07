@@ -467,6 +467,7 @@ class MySensorsDevice(Device):
 
             elif new_main_type == 13:                      # Power measuring device, like power meters
                 if new_sub_type == 17: # V_WATT
+                    self._type.append('EnergyMonitor')
                     self.properties[targetPropertyID] = MySensorsProperty(
                         self,
                         targetPropertyID,
@@ -480,6 +481,7 @@ class MySensorsDevice(Device):
                         },
                         values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
                 if new_sub_type == 18: # V_KWH
+                    self._type.append('EnergyMonitor')
                     self.properties[targetPropertyID] = MySensorsProperty(
                         self,
                         targetPropertyID,
