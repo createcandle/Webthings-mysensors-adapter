@@ -896,7 +896,18 @@ class MySensorsDevice(Device):
                             'readOnly': False,
                         },
                         values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
-
+                if new_sub_type == 17: # V_WATT (power meter)
+                    self.properties[targetPropertyID] = MySensorsProperty(
+                        self,
+                        targetPropertyID,
+                        {
+                            '@type': 'InstantaneousPowerProperty',
+                            'label': new_description,
+                            'type': 'number',
+                            'unit': 'watt',
+                        },
+                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
+                        
                 if new_sub_type == 2: # V_STATUS
                     self.properties[targetPropertyID] = MySensorsProperty(
                         self,
@@ -923,18 +934,7 @@ class MySensorsDevice(Device):
                             'unit': 'percent',
                         },
                         values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
-
-                if new_sub_type == 17: # V_WATT (power meter)
-                    self.properties[targetPropertyID] = MySensorsProperty(
-                        self,
-                        targetPropertyID,
-                        {
-                            '@type': 'InstantaneousPowerProperty',
-                            'label': new_description,
-                            'type': 'number',
-                            'unit': 'watt',
-                        },
-                        values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
+                        
 
             elif new_main_type == 27: # RGB light with separate white level, using hex code like #FF0000FF, where the last FF is the brightness.
                 if new_sub_type == 2: # V_STATUS
@@ -1410,12 +1410,13 @@ class MySensorsDevice(Device):
  
         try:
             if targetPropertyID in self.properties:
-                #self.notify_property_changed(self.properties[targetPropertyID])
-                #print("-All properties: " + str(self.get_property_descriptions()))
                 try:
+                    self.notify_property_changed(self.properties[targetPropertyID])
+                    #print("-All properties: " + str(self.get_property_descriptions()))
                     #self.adapter.handle_device_added(self)
                     if self.adapter.DEBUG:
                         print("---property now exists")
+                        
                 except Exception as ex:
                     print("Handle_device_added after adding property error: " + str(ex))
                     
