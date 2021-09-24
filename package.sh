@@ -1,11 +1,14 @@
 #!/bin/bash -e
 
+python3 -m pip install --upgrade pip
+
 version=$(grep '"version"' manifest.json | cut -d: -f2 | cut -d\" -f2)
 
 # Setup environment for building inside Dockerized toolchain
 [ $(id -u) = 0 ] && umask 0
 
 # Clean up from previous releases
+echo "removing old files"
 rm -rf *.tgz *.sha256sum package SHA256SUMS lib
 
 if [ -z "${ADDON_ARCH}" ]; then
@@ -16,9 +19,9 @@ else
 fi
 
 
-
 # Prep new package
-mkdir lib package
+echo "creating package"
+mkdir -p lib package
 
 # Pull down Python dependencies
 pip3 install -r requirements.txt -t lib --no-binary :all: --prefix ""
@@ -41,6 +44,7 @@ echo "creating archive"
 TARFILE="mysensors-adapter-${version}${TARFILE_SUFFIX}.tgz"
 tar czf ${TARFILE} package
 
+echo "creating shasums"
 shasum --algorithm 256 ${TARFILE} > ${TARFILE}.sha256sum
 cat ${TARFILE}.sha256sum
 #sha256sum ${TARFILE}
