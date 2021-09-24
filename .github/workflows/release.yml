@@ -79,8 +79,6 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.version }}
-    - name: Update PIP
-      run: python3 -m pip install --upgrade pip
     - name: Build adapter
       run: |
         ./build.sh "${{ matrix.platform }}" "${{ matrix.language }}" "${{ matrix.version }}"
