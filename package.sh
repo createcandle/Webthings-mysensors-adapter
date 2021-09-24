@@ -1,6 +1,8 @@
 #!/bin/bash -e
 
-python3 -m pip install --upgrade pip
+#python3 -m pip install --upgrade pip
+
+export PYTHONIOENCODING=utf8
 
 version=$(grep '"version"' manifest.json | cut -d: -f2 | cut -d\" -f2)
 
