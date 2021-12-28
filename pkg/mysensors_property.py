@@ -27,7 +27,7 @@ class MySensorsProperty(Property):
             if device.adapter.DEBUG:
                 print("Property: initialising")
             Property.__init__(self, device, name, description)
-            self.set_cached_value(value)
+            
 
             #self.device = device
             self.node_id = node_id # These three are used in the set_value function to send a message back to the proper node in the MySensors network.
@@ -41,7 +41,8 @@ class MySensorsProperty(Property):
             self.description = description
             self.values = values
             self.value = value
-
+            self.set_cached_value(value)
+            #self.device.notify_property_changed(self)
             #self.set_cached_value(value)
             #self.value = value #hmm, test
             #self.device = device
@@ -64,7 +65,8 @@ class MySensorsProperty(Property):
         
         #if device.adapter.DEBUG:
         if self.device.adapter.DEBUG:
-            print("<< Sending update to MySensors network")
+            print("<< Sending update to MySensors network: " + str(value))
+        #print("<< Sending update to MySensors network: " + str(value))
         #print("->name " + str(self.name))
         #print("->devi " + str(self.device))
         #print("->node_id " + str(self.node_id))
@@ -117,7 +119,7 @@ class MySensorsProperty(Property):
             print("set_value inside property object failed. Error: " + str(ex))
 
 
-    # I'm not sure that this function is ever used..
+    # I'm not sure that this function is ever used
     def update(self, value): 
         """
         Update the current value, if necessary.
@@ -156,5 +158,6 @@ class MySensorsProperty(Property):
             print("property: update: error adding # to color value")
         
         if value != self.value:
+            self.value = value
             self.set_cached_value(value)
             self.device.notify_property_changed(self)

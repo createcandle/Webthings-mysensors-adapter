@@ -690,7 +690,11 @@ class MySensorsAdapter(Adapter):
                         # The property has already been created, so just update its value.    
                         try:
                             if targetProperty != None:
+                                #self.devices["MySensors-" + str(message.node_id)].properties[targetPropertyID].update( new_value )
                                 targetProperty.update(new_value)
+                                #targetProperty.set_value(new_value)
+                            else:
+                                print("ERROR - target property still did not exist!")
                         except Exception as ex:
                             print("-Failed update value from incoming message:" + str(ex))
             
@@ -855,12 +859,12 @@ class MySensorsAdapter(Adapter):
         # USB serial communication speed
         try:
             if 'USB serial communication speed' in config:
-                self.usb_serial_communication_speed = int(config['USB Serial communication speed'])
+                self.usb_serial_communication_speed = int(config['USB serial communication speed'])
                 print("-USB serial communication speed: " + str(self.usb_serial_communication_speed))
                 
         except Exception as ex:
             print("USB Serial communication speed error:" + str(ex))
-
+            print("-USB serial communication speed = " + str(self.usb_serial_communication_speed))
 
         
         # Metric or Imperial
