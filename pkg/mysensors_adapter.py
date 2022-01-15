@@ -811,6 +811,7 @@ class MySensorsAdapter(Adapter):
             database.close()
         except:
             print("Error! Failed to open settings database.")
+            self.close_proxy()
 
         if not config:
             print("Error loading config from database")
@@ -1112,7 +1113,8 @@ class MySensorsAdapter(Adapter):
                                     extra_name = str(property_object.node_id) + "-" + str(property_object.child_id)
                                     property_label = str(property_object.description['label'])
                                     
-                                    print("extra property title = " + str(property_label))
+                                    if self.DEBUG:
+                                        print("extra property title = " + str(property_label))
                                     # Check if the extra thing hasn't already been created
                                                                     # Add the node to the devices list
                                     device = MySensorsDevice(self, extra_name, property_label)

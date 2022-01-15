@@ -1,4 +1,4 @@
-"""MySensors adapter for WebThings Gateway."""
+"""MySensors device for WebThings Gateway."""
 
 
 import threading
@@ -31,7 +31,7 @@ class MySensorsDevice(Device):
         #self.title = str(sketch_name)
         #self.description = str(sketch_name)
         
-        print("Device init, id number: " + str(_id) + ", sketch name: " + str(sketch_name))
+        
         #print("_id: " + str(_id))
         Device.__init__(self, adapter, _id)
         
@@ -48,6 +48,9 @@ class MySensorsDevice(Device):
         self.connected = False # Will be set to true once we receive an actual message from the node.
         
         self.links = []
+        
+        if self.adapter.DEBUG:
+            print("Device object init, id number: " + str(_id) + ", sketch name: " + str(sketch_name))
         
         #print("name = " + str(self.name))
         #print("title = " + str(self.title))
@@ -144,7 +147,7 @@ class MySensorsDevice(Device):
                         targetPropertyID,
                         {
                             '@type': 'OpenProperty',
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'boolean',
                             'readOnly': True,
                         },
@@ -156,7 +159,7 @@ class MySensorsDevice(Device):
                         targetPropertyID,
                         {
                             #'@type': 'OnOffProperty',
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'boolean',
                         },
                         values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
@@ -170,7 +173,7 @@ class MySensorsDevice(Device):
                         targetPropertyID,
                         {
                             '@type': 'MotionProperty',
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'boolean',
                             'readOnly': True,
                         },
@@ -182,7 +185,7 @@ class MySensorsDevice(Device):
                         targetPropertyID,
                         {
                             '@type': 'OnOffProperty',
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'boolean',
                         },
                         values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
@@ -196,7 +199,7 @@ class MySensorsDevice(Device):
                         targetPropertyID,
                         {
                             '@type': 'AlarmProperty',
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'boolean',
                             'readOnly': True,
                         },
@@ -208,7 +211,7 @@ class MySensorsDevice(Device):
                         targetPropertyID,
                         {
                             #'@type': 'OnOffProperty',
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'boolean',
                         },
                         values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
@@ -222,7 +225,7 @@ class MySensorsDevice(Device):
                         targetPropertyID,
                         {
                             '@type': 'OnOffProperty',
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'boolean',
                         },
                         values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
@@ -235,7 +238,7 @@ class MySensorsDevice(Device):
                         targetPropertyID,
                         {
                             '@type': 'InstantaneousPowerProperty',
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'number',
                             'unit': 'watt',
                         },
@@ -250,7 +253,7 @@ class MySensorsDevice(Device):
                         targetPropertyID,
                         {
                             '@type': 'OnOffProperty',
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'boolean',
                         },
                         values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
@@ -261,7 +264,7 @@ class MySensorsDevice(Device):
                         targetPropertyID,
                         {
                             '@type': 'BrightnessProperty',
-                            'label': new_description,
+                            'title': new_description,
                             'minimum': 0,
                             'maximum': 100,
                             'step': 1,
@@ -276,7 +279,7 @@ class MySensorsDevice(Device):
                         targetPropertyID,
                         {
                             '@type': 'InstantaneousPowerProperty',
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'number',
                             'unit': 'watt',
                             'readOnly': True,
@@ -292,7 +295,7 @@ class MySensorsDevice(Device):
                         targetPropertyID,
                         {
                             '@type': 'LevelProperty',
-                            'label': new_description,
+                            'title': new_description,
                             'minimum': 0,
                             'maximum': 100,
                             'step': 1,
@@ -307,7 +310,7 @@ class MySensorsDevice(Device):
                         targetPropertyID,
                         {
                             '@type': 'OnOffProperty',
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'boolean',
                         },
                         values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
@@ -317,7 +320,7 @@ class MySensorsDevice(Device):
                         targetPropertyID,
                         {
                             #'@type': 'OnOffProperty',
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'boolean',
                         },
                         values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
@@ -332,7 +335,7 @@ class MySensorsDevice(Device):
                         targetPropertyID,
                         {
                             '@type': 'TemperatureProperty',
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'number',
                             'unit': self.adapter.temperature_unit,
                             'readOnly': True,
@@ -349,7 +352,7 @@ class MySensorsDevice(Device):
                         targetPropertyID,
                         {
                             '@type': 'LevelProperty',
-                            'label': new_description,
+                            'title': new_description,
                             'minimum': 0,
                             'maximum': 100,
                             'type': 'number',
@@ -368,7 +371,7 @@ class MySensorsDevice(Device):
                         targetPropertyID,
                         {
                             '@type': 'LevelProperty',
-                            'label': new_description,
+                            'title': new_description,
                             'minimum': 900,
                             'maximum': 1100,
                             'type': 'number',
@@ -382,7 +385,7 @@ class MySensorsDevice(Device):
                         self,
                         targetPropertyID,
                         {
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'string',
                             'readOnly': True,
                         },
@@ -395,7 +398,7 @@ class MySensorsDevice(Device):
                         self,
                         targetPropertyID,
                         {
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'number',
                             'readOnly': True,
                             'multipleOf':0.1,
@@ -406,7 +409,7 @@ class MySensorsDevice(Device):
                         self,
                         targetPropertyID,
                         {
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'string',
                             'readOnly': True,
                         },
@@ -419,7 +422,7 @@ class MySensorsDevice(Device):
                         self,
                         targetPropertyID,
                         {
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'number',
                             'readOnly': True,
                             'multipleOf':0.1,
@@ -430,7 +433,7 @@ class MySensorsDevice(Device):
                         self,
                         targetPropertyID,
                         {
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'number',
                             'readOnly': True,
                             'multipleOf':0.1,
@@ -444,7 +447,7 @@ class MySensorsDevice(Device):
                         self,
                         targetPropertyID,
                         {
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'number',
                             'readOnly': True,
                             'multipleOf':0.1,
@@ -458,7 +461,7 @@ class MySensorsDevice(Device):
                         self,
                         targetPropertyID,
                         {
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'number',
                             'readOnly': True,
                             'multipleOf':0.01,
@@ -473,7 +476,7 @@ class MySensorsDevice(Device):
                         targetPropertyID,
                         {
                             '@type': 'InstantaneousPowerProperty',
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'number',
                             'unit': 'watt',
                             'readOnly': True,
@@ -486,7 +489,7 @@ class MySensorsDevice(Device):
                         self,
                         targetPropertyID,
                         {
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'number',
                             'unit': 'kwh',
                             'readOnly': True,
@@ -498,7 +501,7 @@ class MySensorsDevice(Device):
                         self,
                         targetPropertyID,
                         {
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'number',
                             'unit': 'var',
                             'readOnly': True,
@@ -510,7 +513,7 @@ class MySensorsDevice(Device):
                         self,
                         targetPropertyID,
                         {
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'number',
                             'unit': 'va',
                             'readOnly': True,
@@ -522,7 +525,7 @@ class MySensorsDevice(Device):
                         self,
                         targetPropertyID,
                         {
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'number',
                             'readOnly': True,
                             'multipleOf':0.01,
@@ -541,7 +544,7 @@ class MySensorsDevice(Device):
                         targetPropertyID,
                         {
                             '@type': 'TemperatureProperty',
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'number',
                             'unit': 'degree celsius',
                             'readOnly': True,
@@ -555,7 +558,7 @@ class MySensorsDevice(Device):
                         targetPropertyID,
                         {
                             '@type': 'TargetTemperatureProperty',
-                            'label': new_description,
+                            'title': new_description,
                             'minimum':0,
                             'maximum':150,
                             'type': 'number',
@@ -570,13 +573,13 @@ class MySensorsDevice(Device):
                         targetPropertyID,
                         {
                             '@type': 'HeatingCoolingProperty',
-                            'label': new_description,
+                            'title': new_description,
                             #'title': 'Mode',
                             'type': 'string',
                             'enum': [
                                 'off',  # Same in mySensors (but capitalised)
-                                'heat', # MySensors value: HeatOn
-                                'cool', # MySensors value: CoolOn
+                                'heating', # MySensors value: HeatOn
+                                'cooling', # MySensors value: CoolOn
                                 'auto',  # MySensors value: 'AutoChangeOver'
                               ] 
                         },
@@ -588,7 +591,7 @@ class MySensorsDevice(Device):
                         targetPropertyID,
                         {
                             #'@type': 'HeatingCoolingProperty',
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'boolean',
                             'readOnly': True,
                         },
@@ -602,7 +605,7 @@ class MySensorsDevice(Device):
                         targetPropertyID,
                         {
                             '@type': 'HeatingCoolingProperty',
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'string',
                             'enum': [
                                 'off',
@@ -631,7 +634,7 @@ class MySensorsDevice(Device):
                         {
                             #'@type': 'BooleanProperty',
                             '@type': 'HeatingCoolingProperty',
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'string',
                             'enum': [
                                 'off',
@@ -654,7 +657,7 @@ class MySensorsDevice(Device):
                             self,
                             targetPropertyID,
                             {
-                                'label': new_description,
+                                'title': new_description,
                                 'type': 'number',
                                 'unit': prefix,
                                 'readOnly': True,
@@ -666,7 +669,7 @@ class MySensorsDevice(Device):
                             self,
                             targetPropertyID,
                             {
-                                'label': new_description,
+                                'title': new_description,
                                 'type': 'number',
                                 'readOnly': True,
                                 'multipleOf':0.01,
@@ -680,7 +683,7 @@ class MySensorsDevice(Device):
                         self,
                         targetPropertyID,
                         {
-                            'label': new_description,
+                            'title': new_description,
                             'minimum': 0,
                             'maximum': 100,
                             'step': 1,
@@ -694,7 +697,7 @@ class MySensorsDevice(Device):
                         self,
                         targetPropertyID,
                         {
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'integer',
                             'unit': 'Lux',
                             'readOnly': True,
@@ -719,7 +722,7 @@ class MySensorsDevice(Device):
                         {
                             #'@type': 'OnOffProperty',
                             '@type': 'OpenProperty',
-                            'label': new_description,
+                            'title': new_description,
                             'readOnly': False,
                             'type': 'boolean',
                         },
@@ -750,7 +753,7 @@ class MySensorsDevice(Device):
                                 targetPropertyID,
                                 {
                                     '@type': 'LockedProperty', #'OnOffProperty',
-                                    'label': new_description,
+                                    'title': new_description,
                                     'type': 'string',
                                     'enum': ['locked', 'unlocked', 'jammed', 'unknown'],
                                     'readOnly': True,
@@ -789,7 +792,7 @@ class MySensorsDevice(Device):
                         self,
                         targetPropertyID,
                         {
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'number',
                             'readOnly': True,
                             'multipleOf':0.01,
@@ -804,7 +807,7 @@ class MySensorsDevice(Device):
                             self,
                             targetPropertyID,
                             {
-                                'label': new_description,
+                                'title': new_description,
                                 'type': 'number',
                                 'unit': prefix,
                                 'readOnly': True,
@@ -816,7 +819,7 @@ class MySensorsDevice(Device):
                             self,
                             targetPropertyID,
                             {
-                                'label': new_description,
+                                'title': new_description,
                                 'type': 'number',
                                 'readOnly': True,
                                 'multipleOf':0.1,
@@ -832,7 +835,7 @@ class MySensorsDevice(Device):
                         targetPropertyID,
                         {
                             '@type': 'LevelProperty',
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'number',
                             'multipleOf':0.01,
                         },
@@ -849,7 +852,7 @@ class MySensorsDevice(Device):
                             targetPropertyID,
                             {
                                 '@type': 'LevelProperty',
-                                'label': new_description,
+                                'title': new_description,
                                 'type': 'number',
                                 'unit': prefix,
                                 'readOnly': True,
@@ -861,7 +864,7 @@ class MySensorsDevice(Device):
                             self,
                             targetPropertyID,
                             {
-                                'label': new_description,
+                                'title': new_description,
                                 'type': 'number',
                                 'readOnly': True,
                                 'multipleOf':0.1,
@@ -877,7 +880,7 @@ class MySensorsDevice(Device):
                         targetPropertyID,
                         {
                             '@type': 'PushedProperty',
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'boolean',
                         },
                         values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
@@ -891,7 +894,7 @@ class MySensorsDevice(Device):
                         targetPropertyID,
                         {
                             '@type': 'ColorProperty',
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'string',
                             'readOnly': False,
                         },
@@ -902,7 +905,7 @@ class MySensorsDevice(Device):
                         targetPropertyID,
                         {
                             '@type': 'InstantaneousPowerProperty',
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'number',
                             'unit': 'watt',
                         },
@@ -914,7 +917,7 @@ class MySensorsDevice(Device):
                         targetPropertyID,
                         {
                             '@type': 'OnOffProperty',
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'boolean',
                         },
                         values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
@@ -926,7 +929,7 @@ class MySensorsDevice(Device):
                         targetPropertyID,
                         {
                             '@type': 'BrightnessProperty',
-                            'label': new_description,
+                            'title': new_description,
                             'minimum': 0,
                             'maximum': 100,
                             'step': 1,
@@ -944,7 +947,7 @@ class MySensorsDevice(Device):
                         targetPropertyID,
                         {
                             '@type': 'OnOffProperty',
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'boolean',
                         },
                         values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
@@ -955,7 +958,7 @@ class MySensorsDevice(Device):
                         targetPropertyID,
                         {
                             '@type': 'BrightnessProperty',
-                            'label': new_description,
+                            'title': new_description,
                             'minimum': 0,
                             'maximum': 100,
                             'step': 1,
@@ -969,7 +972,7 @@ class MySensorsDevice(Device):
                         targetPropertyID,
                         {
                             '@type': 'ColorProperty',
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'string',
                             'readOnly': False,
                         },
@@ -980,7 +983,7 @@ class MySensorsDevice(Device):
                         targetPropertyID,
                         {
                             '@type': 'InstantaneousPowerProperty',
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'number',
                             'unit': 'watt',
                         },
@@ -994,7 +997,7 @@ class MySensorsDevice(Device):
                         self,
                         targetPropertyID,
                         {
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'string',
                             'readOnly': True,
                         },
@@ -1009,7 +1012,7 @@ class MySensorsDevice(Device):
                         targetPropertyID,
                         {
                             #'@type': 'OnOffProperty',
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'boolean',
                             'readOnly': True,
                         },
@@ -1021,7 +1024,7 @@ class MySensorsDevice(Device):
                         targetPropertyID,
                         {
                             '@type': 'HeatingCoolingProperty',
-                            'label': new_description,
+                            'title': new_description,
                             #'title': 'Mode',
                             'type': 'string',
                             'enum': [
@@ -1039,7 +1042,7 @@ class MySensorsDevice(Device):
                         targetPropertyID,
                         {
                             #'@type': 'LevelProperty',
-                            'label': new_description,
+                            'title': new_description,
                             #'title': 'Mode',
                             'type': 'string',
                             'enum': [
@@ -1057,7 +1060,7 @@ class MySensorsDevice(Device):
                         targetPropertyID,
                         {
                             #'@type': 'LevelProperty',
-                            'label': new_description,
+                            'title': new_description,
                             'minimum':0,
                             'maximum':50,
                             'type': 'number',
@@ -1074,7 +1077,7 @@ class MySensorsDevice(Device):
                         targetPropertyID,
                         {
                             '@type': 'TargetTemperatureProperty',
-                            'label': new_description,
+                            'title': new_description,
                             'minimum':0,
                             'maximum':150,
                             'type': 'number',
@@ -1089,7 +1092,7 @@ class MySensorsDevice(Device):
                         targetPropertyID,
                         {
                             #'@type': 'LevelProperty',
-                            'label': new_description,
+                            'title': new_description,
                             #'title': 'Mode',
                             'type': 'string',
                             'enum': [
@@ -1107,7 +1110,7 @@ class MySensorsDevice(Device):
                         targetPropertyID,
                         {
                             '@type': 'HeatingCoolingProperty',
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'string',
                             'enum': [
                                 'off',
@@ -1127,7 +1130,7 @@ class MySensorsDevice(Device):
                         self,
                         targetPropertyID,
                         {
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'number',
                             'unit': 'impedance',
                             'readOnly': True,
@@ -1140,7 +1143,7 @@ class MySensorsDevice(Device):
                         targetPropertyID,
                         {
                             '@type': 'VoltageProperty',
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'number',
                             'unit': 'volt',
                             'readOnly': True,
@@ -1153,7 +1156,7 @@ class MySensorsDevice(Device):
                         targetPropertyID,
                         {
                             '@type': 'CurrentProperty',
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'number',
                             'unit': 'ampere',
                             'readOnly': True,
@@ -1170,7 +1173,7 @@ class MySensorsDevice(Device):
                         targetPropertyID,
                         {
                             #'@type': 'OnOffProperty',
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'boolean',
                         },
                         values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
@@ -1182,7 +1185,7 @@ class MySensorsDevice(Device):
                         targetPropertyID,
                         {
                             '@type': 'AlarmProperty',
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'number',
                             'readOnly': True,
                         },
@@ -1195,7 +1198,7 @@ class MySensorsDevice(Device):
                         self,
                         targetPropertyID,
                         {
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'boolean',
                         },
                         values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
@@ -1206,7 +1209,7 @@ class MySensorsDevice(Device):
                         targetPropertyID,
                         {
                             '@type': 'LeakProperty',
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'boolean',
                             'readOnly': True,
                         },
@@ -1220,7 +1223,7 @@ class MySensorsDevice(Device):
                         self,
                         targetPropertyID,
                         {
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'number',
                             'readOnly': True,
                             'multipleOf':0.1,
@@ -1233,7 +1236,7 @@ class MySensorsDevice(Device):
                         targetPropertyID,
                         {
                             '@type': 'OpenProperty',
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'boolean',
                             'readOnly': True,
                         },
@@ -1244,7 +1247,7 @@ class MySensorsDevice(Device):
                         targetPropertyID,
                         {
                             #'@type': 'OnOffProperty',
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'boolean',
                         },
                         values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
@@ -1257,7 +1260,7 @@ class MySensorsDevice(Device):
                         self,
                         targetPropertyID,
                         {
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'number',
                             'readOnly': True,
                             'multipleOf':0.1,
@@ -1270,7 +1273,7 @@ class MySensorsDevice(Device):
                         targetPropertyID,
                         {
                             '@type': 'OpenProperty',
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'boolean',
                             'readOnly': True,
                         },
@@ -1281,7 +1284,7 @@ class MySensorsDevice(Device):
                         targetPropertyID,
                         {
                             #'@type': 'OnOffProperty',
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'boolean',
                         },
                         values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
@@ -1294,7 +1297,7 @@ class MySensorsDevice(Device):
                         self,
                         targetPropertyID,
                         {
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'integer',
                             'readOnly': True,
                             'multipleOf':.1,
@@ -1307,7 +1310,7 @@ class MySensorsDevice(Device):
                         targetPropertyID,
                         {
                             '@type': 'OnOffProperty',
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'boolean',
                         },
                         values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
@@ -1318,7 +1321,7 @@ class MySensorsDevice(Device):
                         targetPropertyID,
                         {
                             '@type': 'LeakProperty',
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'boolean',
                             'readOnly': True,
                         },
@@ -1331,7 +1334,7 @@ class MySensorsDevice(Device):
                         self,
                         targetPropertyID,
                         {
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'string',
                         },
                         values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
@@ -1343,7 +1346,7 @@ class MySensorsDevice(Device):
                         self,
                         targetPropertyID,
                         {
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'number',
                             'readOnly': True,
                             'multipleOf':0.01,
@@ -1357,7 +1360,7 @@ class MySensorsDevice(Device):
                         self,
                         targetPropertyID,
                         {
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'string',
                         },
                         values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
@@ -1371,7 +1374,7 @@ class MySensorsDevice(Device):
                         targetPropertyID,
                         {
                             #'@type': 'OnOffProperty',
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'boolean',
                         },
                         values, new_value, new_node_id, new_child_id, new_main_type, new_sub_type)
@@ -1382,7 +1385,7 @@ class MySensorsDevice(Device):
                         targetPropertyID,
                         {
                             '@type': 'TemperatureProperty',
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'number',
                             'unit': 'degree celsius',
                             'readOnly': True,
@@ -1394,7 +1397,7 @@ class MySensorsDevice(Device):
                         self,
                         targetPropertyID,
                         {
-                            'label': new_description,
+                            'title': new_description,
                             'type': 'number',
                             'readOnly': True,
                         },

@@ -65,7 +65,7 @@ class MySensorsProperty(Property):
         
         #if device.adapter.DEBUG:
         if self.device.adapter.DEBUG:
-            print("<< Sending update to MySensors network: " + str(value))
+            print("<< Outgoing message to " + str(self.name) + " on MySensors network: " + str(value))
         #print("<< Sending update to MySensors network: " + str(value))
         #print("->name " + str(self.name))
         #print("->devi " + str(self.device))
