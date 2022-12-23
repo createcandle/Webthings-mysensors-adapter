@@ -18,7 +18,7 @@
     "default": {
       "Gateway": "USB Serial gateway",
       "Metric": true,
-      "Optimize things": true,
+      "Optimize things": false,
       "Timeout period": "60",
       "USB device name": "",
       "USB serial communication speed":"115200",
