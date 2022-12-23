@@ -32,9 +32,7 @@ jobs:
           'darwin-x64',
         ]
         pair: [
-          'python:3.5',
-          'python:3.7',
-          'python:3.8',
+         # 'python:3.7',
           'python:3.9',
         ]
         include:
@@ -42,19 +40,19 @@ jobs:
             host-os: 'ubuntu-latest'
           - platform: 'linux-arm64'
             host-os: 'ubuntu-latest'
-          - platform: 'linux-x64'
-            host-os: 'ubuntu-latest'
-          - platform: 'darwin-x64'
-            host-os: 'macos-latest'
-          - pair: 'python:3.5'
-            language: 'python'
-            version: '3.5'
-          - pair: 'python:3.7'
-            language: 'python'
-            version: '3.7'
-          - pair: 'python:3.8'
-            language: 'python'
-            version: '3.8'
+          #- platform: 'linux-x64'
+          #  host-os: 'ubuntu-latest'
+          #- platform: 'darwin-x64'
+          #  host-os: 'macos-latest'
+          #- pair: 'python:3.5'
+          #  language: 'python'
+          #  version: '3.5'
+          #- pair: 'python:3.7'
+          #  language: 'python'
+          #  version: '3.7'
+          #- pair: 'python:3.8'
+          #  language: 'python'
+          #  version: '3.8'
           - pair: 'python:3.9'
             language: 'python'
             version: '3.9'
