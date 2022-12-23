@@ -1,6 +1,6 @@
 {
-  "author": "CreateCandle",
-  "description": "MySensors add-on for Mozilla WebThings Gateway",
+  "author": "CandleSmartHome.com",
+  "description": "MySensors add-on, wirelessly connects to Arduino devices",
   "gateway_specific_settings": {
     "webthings": {
       "exec": "python3 {path}/main.py",
@@ -21,7 +21,7 @@
       "Optimize things": true,
       "Timeout period": "60",
       "USB device name": "",
-	  	"USB serial communication speed":"115200",
+      "USB serial communication speed":"115200",
       "IP address": "",
       "MQTT password": "",
       "MQTT username": "",
@@ -60,10 +60,10 @@
           "description": "The speed (baud rate) with which to communicate over USB with the receiver. Default for Candle is 115200.",
           "enum": [
             "9600",
-						"19200", 
-						"38400", 
-						"57600", 
-						"115200"
+            "19200", 
+            "38400", 
+            "57600", 
+            "115200"
           ],
           "type": "string"
         },
@@ -96,12 +96,12 @@
         "Gateway",
         "Optimize things",
         "Metric",
-				"USB serial communication speed",
+        "USB serial communication speed",
         "Timeout period"
       ],
       "type": "object"
     }
   },
   "short_name": "MySensors",
-  "version": "1.3.4"
+  "version": "1.3.5"
 }
