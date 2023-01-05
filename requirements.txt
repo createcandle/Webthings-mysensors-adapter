@@ -1,3 +1,4 @@
 pyMySensors
 paho-mqtt
 asyncio
+pyserial
