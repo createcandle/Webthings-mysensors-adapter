@@ -1,6 +1,6 @@
 {
-  "author": "CreateCandle",
-  "description": "Adds support for connnecting to MySensors devices",
+  "author": "CandleSmartHome.com",
+  "description": "Wirelessly connect to Arduino devices",
   "gateway_specific_settings": {
     "webthings": {
       "exec": "python3 {path}/main.py",
@@ -18,10 +18,10 @@
     "default": {
       "Gateway": "USB Serial gateway",
       "Metric": true,
-      "Optimize things": true,
+      "Optimize things": false,
       "Timeout period": "60",
       "USB device name": "",
-	  "USB serial communication speed":"115200",
+      "USB serial communication speed":"115200",
       "IP address": "",
       "MQTT password": "",
       "MQTT username": "",
@@ -96,7 +96,7 @@
         "Gateway",
         "Optimize things",
         "Metric",
-		"USB serial communication speed",
+        "USB serial communication speed",
         "Timeout period"
       ],
       "type": "object"
