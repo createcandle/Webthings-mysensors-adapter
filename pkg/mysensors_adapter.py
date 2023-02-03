@@ -80,6 +80,7 @@ class MySensorsAdapter(Adapter):
         self.MQTT_out_prefix = "mygateway1-out"
         self.MQTT_in_prefix = "mygateway1-in"
         
+        self.GATEWAY = None
         #self.things_list = [] # not used?
         
         self.timeout_seconds = 0 # the default is a day
@@ -126,7 +127,7 @@ class MySensorsAdapter(Adapter):
                          exit() # should restart the addon
                      else:
                          if self.DEBUG:
-                             print("No MySensors receiver plugged in")
+                             print("Still no MySensors receiver plugged in")
                 else:
                     try:
                         current_time = int(time.time())
@@ -213,6 +214,8 @@ class MySensorsAdapter(Adapter):
                     
                     
                     if minutes_counter > 60: # every hour, send out a discovery request to all nodes in the network
+                        if self.DEBUG:
+                            print("An hour has passed. Calling try_request, asking all MySensors devices to present themselves again.")
                         minutes_counter = 0
                         self.try_rerequest()
 
@@ -476,20 +479,53 @@ class MySensorsAdapter(Adapter):
 
     def remove_thing(self, device_id):
         if self.DEBUG:
-            print("-----REMOVING:" + str(device_id))
+            print("\n-----REMOVING:" + str(device_id))
         
         try:
             obj = self.get_device(device_id)        
             self.handle_device_removed(obj)                     # Remove from device dictionary
-            print("Removed device")
-        except:
-            print("Could not remove things from devices")
+            if self.DEBUG:
+                print("Removed device")
+        except Exception as ex:
+            print("Error, could not remove thing from devices: " + str(ex))
             
         try:
             if device_id.count('-') == 1:
-                ID_to_clear = int(device_id.split('-')[-1])
-                del self.GATEWAY.sensors[ID_to_clear]           # Remove from PyMysensors persistence
-                print("Removed device from persistence too")
+                ID_to_clear = str(device_id.split('-')[-1])
+                if self.DEBUG:
+                    print("ID to clear: " + str(ID_to_clear))
+                try:
+                    del self.GATEWAY.sensors[ID_to_clear]           # Remove from PyMysensors persistence
+                    
+                    if self.DEBUG:
+                        print("Removed device from persistence too")
+                except Exception as ex:
+                    print("error removing device from self.GATEWAY: " + str(ex))
+                    
+                try:
+                    with open(self.persistence_file_path) as f:
+                        persistent_data = json.load(f)
+                        if self.DEBUG:
+                            print("Persistence data was loaded succesfully.")
+                        #del persistent_data[ID_to_clear]
+                        persistent_key_to_remove = None
+                        for key, item in persistent_data.items():
+                            print("key, item: ", key, item)
+                            if str(item['sensor_id']) == ID_to_clear:
+                                persistent_key_to_remove = key
+                        if persistent_key_to_remove != None:
+                            if self.DEBUG:
+                                print("Found the key to remove")
+                            del persistent_data[persistent_key_to_remove]
+                        json.dump( persistent_data, open( self.persistence_file_path, 'w+' ), indent=4 )
+                        if self.DEBUG:
+                            print("Persistence data was saved.")
+                        
+                except Exception as ex:
+                    print("remove device alternatively also failed: " + str(ex))
+                
+                    
+                
         except:
             print("REMOVING MYSENSORS THING FAILED") 
 
@@ -762,29 +798,30 @@ class MySensorsAdapter(Adapter):
 
     def try_rerequest(self):
         # re-request that all nodes present themselves, but only is that thread isn't already running / doesn't already exist.
-        try:
-            if self.t:
-                if self.DEBUG:
-                    print("Rerequest thread already existed")
-                if not self.t.is_alive():
-                    # Restarting request for presentation of nodes
+        if self.GATEWAY != None:
+            try:
+                if self.t:
+                    if self.DEBUG:
+                        print("Rerequest thread already existed")
+                    if not self.t.is_alive():
+                        # Restarting request for presentation of nodes
+                        self.t = threading.Thread(target=self.rerequest)
+                        self.t.daemon = True
+                        self.t.start()
+                        if self.DEBUG:
+                            print("Re-request of node presentation restarted")
+                    else:
+                        if self.DEBUG:
+                            print("Already busy re-requesting nodes.")
+            except:
+                try:
                     self.t = threading.Thread(target=self.rerequest)
                     self.t.daemon = True
                     self.t.start()
                     if self.DEBUG:
-                        print("Re-request of node presentation restarted")
-                else:
-                    if self.DEBUG:
-                        print("Already busy re-requesting nodes.")
-        except:
-            try:
-                self.t = threading.Thread(target=self.rerequest)
-                self.t.daemon = True
-                self.t.start()
-                if self.DEBUG:
-                    print("Re-request thread created")
-            except:
-                print("Could not create thread")
+                        print("Re-request thread created")
+                except:
+                    print("Could not create thread")
 
 
     def rerequest(self):   
@@ -1051,21 +1088,22 @@ class MySensorsAdapter(Adapter):
         timeout -- Timeout in seconds at which to quit pairing
         """
         #print()
-        if self.DEBUG:
-            print("PAIRING INITIATED")
+        if self.no_receiver_plugged_in == False:
+            if self.DEBUG:
+                print("PAIRING INITIATED")
         
-        if self.pairing:
-            print("-Already pairing")
-            return
+            if self.pairing:
+                print("-Already pairing")
+                return
 
-        self.pairing = True
+            self.pairing = True
         
-        self.try_rerequest()
+            self.try_rerequest()
                 
-        try:
-            self.send_in_the_clones()
-        except Exception as ex:
-            print("Error while optimizing: " + str(ex))  
+            try:
+                self.send_in_the_clones()
+            except Exception as ex:
+                print("Error while optimizing: " + str(ex))
             
         return
 
