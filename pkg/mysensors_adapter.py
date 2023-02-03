@@ -111,7 +111,11 @@ class MySensorsAdapter(Adapter):
         minutes_counter = 0;
         while self.running:
 
-            if seconds_counter > 60:
+            wait_time = 60
+            if self.no_receiver_plugged_in:
+                wait_time = 5 # Do very quick looping to see if a receiver was plugged in
+
+            if seconds_counter > wait_time:
                 seconds_counter = 0
                 minutes_counter += 1
                 
@@ -120,7 +124,9 @@ class MySensorsAdapter(Adapter):
                      if len(self.initial_serial_devices) != 0:
                          self.send_pairing_prompt("MySensors receiver detected")
                          exit() # should restart the addon
-                     
+                     else:
+                         if self.DEBUG:
+                             print("No MySensors receiver plugged in")
                 else:
                     try:
                         current_time = int(time.time())
@@ -939,7 +945,7 @@ class MySensorsAdapter(Adapter):
         try:
             if 'Gateway' in config:
                 selected_gateway_type = str(config['Gateway'])
-                print("-Gateway choice: " + selected_gateway_type)
+                print("-Gateway choice: " + str(selected_gateway_type))
             else:
                 print("Error: no gateway type selected in add-on settings!")
                 return
