@@ -44,20 +44,25 @@
           "description": "Check the box to request metric units from the devices. Uncheck it to request they send data in imperial units instead.",
           "type": "boolean"
         },
+        "Do not remember devices": {
+          "description": "Advanced. Checking this box will give this addon amnesia; it won't try to remember and recreate previously connected devices. This is usefull in an education setting, for example.",
+          "type": "boolean"
+        },
+		
         "Optimize things": {
-          "description": "Split up big things into separate smaller things. For example, a device with 4 toggles could become 4 devices with one toggle.",
+          "description": "Advanced. Split up big things into separate smaller things. For example, a device with 4 toggles could become 4 devices with one toggle.",
           "type": "boolean"
         },
         "Timeout period": {
           "description": "After how many minutes of inactivity should a device be reported as no longer connected? If you set this to 0, devices will always be set to fully available (even if they are not).",
-          "type": "string"
+          "type": "integer"
         },
         "USB device name": {
-          "description": "If you leave this empty, the add-on will automatically search for a connected MySensors gateway device. If you want you can manually override this proces by providing a serial port name here. On a Linux device this would be something like '/dev/ttyUSB0'.",
+          "description": "Advanced. If you leave this empty, the add-on will automatically search for a connected MySensors gateway device. If you want you can manually override this proces by providing a serial port name here. On a Linux device this would be something like '/dev/ttyUSB0'.",
           "type": "string"
         },
         "USB serial communication speed": {
-          "description": "The speed (baud rate) with which to communicate over USB with the receiver. Default for Candle is 115200.",
+          "description": "Advanced. The speed (baud rate) with which to communicate over USB with the receiver. Default for Candle is 115200.",
           "enum": [
             "9600",
             "19200", 
@@ -68,27 +73,27 @@
           "type": "string"
         },
         "IP address": {
-          "description": "If you are using an ethernet gateway or MQTT server, what is its IP address? You can try 127.0.0.1 if it's installed on the same computer as the Mozilla WebThings gateway.",
+          "description": "Advanced. If you are using an ethernet gateway or MQTT server, what is its IP address? You can try 127.0.0.1 if it's installed on the same computer as the controller.",
           "type": "string"
         },
         "MQTT password": {
-          "description": "The password for MQTT security.",
+          "description": "Advanced. The password for MQTT security.",
           "type": "string"
         },
         "MQTT username": {
-          "description": "The username for MQTT security.",
+          "description": "Advanced. The username for MQTT security.",
           "type": "string"
         },
         "MQTT in prefix": {
-          "description": "The topic prefix for incoming messages messages.",
+          "description": "Advanced. The topic prefix for incoming messages messages.",
           "type": "string"
         },
         "MQTT out prefix": {
-          "description": "The topic prefix for outgoing messages.",
+          "description": "Advanced. The topic prefix for outgoing messages.",
           "type": "string"
         },
         "Debugging": {
-          "description": "Debugging allows you to diagnose any issues with the add-on. If enabled it will result in a lot more debug data in the internal log (which can be found under settings -> developer -> view internal logs).",
+          "description": "Advanced. Debugging allows you to diagnose any issues with the add-on. If enabled it will result in a lot more debug data in the internal log (which can be found under settings -> developer -> view internal logs).",
           "type": "boolean"
         }
       },

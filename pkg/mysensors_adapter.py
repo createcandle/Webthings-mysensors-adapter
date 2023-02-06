@@ -88,6 +88,7 @@ class MySensorsAdapter(Adapter):
         self.previous_heartbeats = {}
         
         self.no_receiver_plugged_in = False
+        self.remember_devices = True # if set to false, then 'recreate_from_persistence' won't be called when the addon starts. The devices will have to present themselves again.
         
         try:
             print("Making initial scan of USB ports")
@@ -344,7 +345,7 @@ class MySensorsAdapter(Adapter):
                   dev_port, baud=self.usb_serial_communication_speed, 
                   #timeout=1.0, 
                   #reconnect_timeout=10.0,
-                  event_callback=self.mysensors_message, persistence=True,
+                  event_callback=self.mysensors_message, persistence=self.remember_devices,
                   persistence_file=self.persistence_file_path, protocol_version='2.2')
                 #GATEWAY.start_persistence() # optional, remove this line if you don't need persistence.
                 #GATEWAY.start()
@@ -390,7 +391,7 @@ class MySensorsAdapter(Adapter):
                     print("Error getting asyncio event loop!")
                 
                 self.GATEWAY = mysensors.AsyncTCPGateway(ip_address, event_callback=self.mysensors_message, 
-                    persistence=True, persistence_file=self.persistence_file_path, 
+                    persistence=self.remember_devices, persistence_file=self.persistence_file_path, 
                     protocol_version='2.2')
 
                 try:
@@ -437,7 +438,7 @@ class MySensorsAdapter(Adapter):
                 try:
                     self.GATEWAY = mysensors.AsyncMQTTGateway(self.MQTTC.publish, self.MQTTC.subscribe, in_prefix=self.MQTT_in_prefix,
                         out_prefix=self.MQTT_out_prefix, retain=True, event_callback=self.mysensors_message,
-                        persistence=True, persistence_file=self.persistence_file_path, 
+                        persistence=self.remember_devices, persistence_file=self.persistence_file_path, 
                         protocol_version='2.2')
                 except Exception as ex:
                     print("AsyncMQTTGateway object error: " + str(ex))
@@ -503,23 +504,24 @@ class MySensorsAdapter(Adapter):
                     print("error removing device from self.GATEWAY: " + str(ex))
                     
                 try:
-                    with open(self.persistence_file_path) as f:
-                        persistent_data = json.load(f)
-                        if self.DEBUG:
-                            print("Persistence data was loaded succesfully.")
-                        #del persistent_data[ID_to_clear]
-                        persistent_key_to_remove = None
-                        for key, item in persistent_data.items():
-                            print("key, item: ", key, item)
-                            if str(item['sensor_id']) == ID_to_clear:
-                                persistent_key_to_remove = key
-                        if persistent_key_to_remove != None:
+                    if os.path.exists(self.persistence_file_path):
+                        with open(self.persistence_file_path) as f:
+                            persistent_data = json.load(f)
                             if self.DEBUG:
-                                print("Found the key to remove")
-                            del persistent_data[persistent_key_to_remove]
-                        json.dump( persistent_data, open( self.persistence_file_path, 'w+' ), indent=4 )
-                        if self.DEBUG:
-                            print("Persistence data was saved.")
+                                print("Persistence data was loaded succesfully.")
+                            #del persistent_data[ID_to_clear]
+                            persistent_key_to_remove = None
+                            for key, item in persistent_data.items():
+                                print("key, item: ", key, item)
+                                if str(item['sensor_id']) == ID_to_clear:
+                                    persistent_key_to_remove = key
+                            if persistent_key_to_remove != None:
+                                if self.DEBUG:
+                                    print("Found the key to remove")
+                                del persistent_data[persistent_key_to_remove]
+                            json.dump( persistent_data, open( self.persistence_file_path, 'w+' ), indent=4 )
+                            if self.DEBUG:
+                                print("Persistence data was saved.")
                         
                 except Exception as ex:
                     print("remove device alternatively also failed: " + str(ex))
@@ -966,10 +968,19 @@ class MySensorsAdapter(Adapter):
             print("MQTT username and/or password error:" + str(ex))
             
             
-            
+        # Forget everything
+        if 'Do not remember devices' in config:
+            self.remember_devices = not bool(config['Do not remember devices'])
+            if not self.remember_devices:
+                if os.path.exists(self.persistence_file_path):
+                    if self.DEBUG:
+                        print("forgettting persistence data")
+                    os.remove(self.persistence_file_path)
+                
         # Now that that we know the desired connection status preference, we quickly recreate all devices.
         try:
-            self.recreate_from_persistence()
+            if self.remember_devices:
+                self.recreate_from_persistence()
         except Exception as ex:
             print("Error while recreating after start_persistence: " + str(ex))
 
@@ -1136,10 +1147,10 @@ class MySensorsAdapter(Adapter):
         """
 
 
-    def handle_device_saved(self, device_id, device):
-        if self.DEBUG:
-            print("handle_device_saved ID = " + str(device_id))
-            #print("handle_device_saved device = " + str(device))
+    #def handle_device_saved(self, device_id, device):
+    #    if self.DEBUG:
+    #        print("handle_device_saved ID = " + str(device_id))
+    #        print("handle_device_saved device = " + str(device))
 
 
     def send_in_the_clones(self):
