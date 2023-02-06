@@ -45,12 +45,11 @@
           "type": "boolean"
         },
         "Do not remember devices": {
-          "description": "Advanced. Checking this box will give this addon amnesia; it won't try to remember and recreate previously connected devices. This is usefull in an education setting, for example.",
+          "description": "Enabling this will give this addon amnesia; it won't try to remember and recreate previously connected devices. This is usefull in an education setting, for example, where you want to start from scratch after each reboot.",
           "type": "boolean"
         },
-		
         "Optimize things": {
-          "description": "Advanced. Split up big things into separate smaller things. For example, a device with 4 toggles could become 4 devices with one toggle.",
+          "description": "Advanced. Split up big things into separate smaller things. For example, a device with 4 toggles could become 4 devices with one toggle. It's recommended to use the Highlights addon instead.",
           "type": "boolean"
         },
         "Timeout period": {
@@ -108,5 +107,5 @@
     }
   },
   "short_name": "MySensors",
-  "version": "1.4.1"
+  "version": "1.4.2"
 }
